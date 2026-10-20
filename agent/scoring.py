@@ -122,13 +122,13 @@ DEFAULT_VENUE_SCORES: dict[str, float] = {
 
 
 def normalize_review_score(
-    raw_score: float | None,
+    raw_score: float | str | None,
     scale: str | tuple[float, float] = "auto",
 ) -> float | None:
     """Normalize a peer-review score to a float bounded strictly between 0.0 and 1.0.
 
     Parameters:
-        raw_score: The raw numerical review score, or None if missing.
+        raw_score: The raw numerical or string review score, or None if missing.
         scale: The scale configuration:
             - "auto": dynamically detects [0, 1], [1, 5], [1, 10], or [0, 100].
             - "0-1": standard 0.0 to 1.0 range.

@@ -94,7 +94,8 @@ def test_score_papers_descending_order():
     assert results[1].paper_id == "doi:10.1000/mid"
     assert results[2].paper_id == "doi:10.1000/low"
 
-    scores = [p.score for p in results]
+    assert all(p.score is not None for p in results)
+    scores = [p.score for p in results if p.score is not None]
     assert scores == sorted(scores, reverse=True)
 
 
@@ -130,6 +131,7 @@ def test_missing_and_zero_citation_counts():
     results = score_papers(papers, current_year=2026)
     assert len(results) == 3
     for p in results:
+        assert p.score_breakdown is not None
         assert p.score_breakdown["citations_per_year"] == 0.0
         assert p.score_breakdown["influential_citation_ratio"] == 0.0
 
@@ -141,6 +143,8 @@ def test_batch_all_zero_citations_no_division_by_zero():
         make_synthetic_paper(paper_id="id:2", citation_count=None),
     ]
     results = score_papers(papers, current_year=2026)
+    assert results[0].score_breakdown is not None
+    assert results[1].score_breakdown is not None
     assert results[0].score_breakdown["citations_per_year"] == 0.0
     assert results[1].score_breakdown["citations_per_year"] == 0.0
 
@@ -155,8 +159,12 @@ def test_missing_publication_year():
     results = score_papers([p_no_year, p_with_year], current_year=2026)
     res_dict = {p.paper_id: p for p in results}
 
-    assert res_dict["id:no_year"].score_breakdown["recency"] == 0.0
-    assert res_dict["id:with_year"].score_breakdown["recency"] == 0.9
+    p_no = res_dict["id:no_year"]
+    p_with = res_dict["id:with_year"]
+    assert p_no.score_breakdown is not None
+    assert p_with.score_breakdown is not None
+    assert p_no.score_breakdown["recency"] == 0.0
+    assert p_with.score_breakdown["recency"] == 0.9
     # Paper with recent year should rank higher due to recency
     assert results[0].paper_id == "id:with_year"
 
@@ -173,11 +181,13 @@ def test_missing_and_unknown_venue():
     ]
     results = score_papers(papers, default_venue_score=0.0)
     for p in results:
+        assert p.score_breakdown is not None
         assert p.score_breakdown["venue_quality"] == 0.0
 
     # Test configurable default_venue_score
     results_custom = score_papers(papers, default_venue_score=0.15)
     for p in results_custom:
+        assert p.score_breakdown is not None
         assert p.score_breakdown["venue_quality"] == 0.15
 
 
@@ -203,6 +213,7 @@ def test_missing_review_score_weight_redistribution():
     results = score_papers([perfect_unreviewed], current_year=2026)
     scored = results[0]
 
+    assert scored.score_breakdown is not None
     assert scored.score_breakdown["citations_per_year"] == 1.0
     assert scored.score_breakdown["influential_citation_ratio"] == 1.0
     assert scored.score_breakdown["venue_quality"] == 1.0
@@ -224,6 +235,7 @@ def test_review_score_present_uses_full_weights():
     )
     results = score_papers([p_reviewed], current_year=2026)
     assert results[0].score == 1.0
+    assert results[0].score_breakdown is not None
     assert results[0].score_breakdown["peer_review"] == 1.0
 
 
@@ -244,7 +256,9 @@ def test_review_score_supported_scales():
     # 1-10 scale (OpenReview / NeurIPS): (x - 1) / 9
     assert normalize_review_score(10.0, scale="1-10") == 1.0
     assert normalize_review_score(1.0, scale="1-10") == 0.0
-    assert round(normalize_review_score(5.5, scale="1-10"), 4) == 0.5
+    s_5_5 = normalize_review_score(5.5, scale="1-10")
+    assert s_5_5 is not None
+    assert round(s_5_5, 4) == 0.5
 
     # 0-100 scale: x / 100
     assert normalize_review_score(85.0, scale="0-100") == 0.85
@@ -259,7 +273,9 @@ def test_review_score_supported_scales():
     # Auto scale detection
     assert normalize_review_score(0.75, scale="auto") == 0.75
     assert normalize_review_score(4.0, scale="auto") == 0.75  # 1-5: (4-1)/4
-    assert round(normalize_review_score(7.0, scale="auto"), 4) == 0.6667  # 1-10: (7-1)/9
+    s_7_0 = normalize_review_score(7.0, scale="auto")
+    assert s_7_0 is not None
+    assert round(s_7_0, 4) == 0.6667  # 1-10: (7-1)/9
     assert normalize_review_score(90.0, scale="auto") == 0.90  # 0-100: 90/100
 
     # None and invalid inputs
@@ -284,6 +300,7 @@ def test_recommendation_threshold():
     # Higher threshold = 0.95
     results_95 = score_papers(papers, threshold=0.95, current_year=2026)
     for p in results_95:
+        assert p.score is not None
         if p.score < 0.95:
             assert p.is_recommended is False
 
@@ -378,14 +395,17 @@ def test_injectable_current_year():
 
     # In 2020: age = 0 -> recency = 1.0
     res_2020 = score_papers([paper], current_year=2020)[0]
+    assert res_2020.score_breakdown is not None
     assert res_2020.score_breakdown["recency"] == 1.0
 
     # In 2025: age = 5 -> recency = 1.0 - (5/10) = 0.5
     res_2025 = score_papers([paper], current_year=2025)[0]
+    assert res_2025.score_breakdown is not None
     assert res_2025.score_breakdown["recency"] == 0.5
 
     # In 2030: age = 10 -> recency = 0.0
     res_2030 = score_papers([paper], current_year=2030)[0]
+    assert res_2030.score_breakdown is not None
     assert res_2030.score_breakdown["recency"] == 0.0
 
 
@@ -398,10 +418,12 @@ def test_configurable_venue_quality():
 
     # Without custom venue mapping -> default 0.0
     res_default = score_papers([paper], default_venue_score=0.0)[0]
+    assert res_default.score_breakdown is not None
     assert res_default.score_breakdown["venue_quality"] == 0.0
 
     # With custom venue mapping -> 0.95
     res_custom = score_papers([paper], venue_scores=custom_venues)[0]
+    assert res_custom.score_breakdown is not None
     assert res_custom.score_breakdown["venue_quality"] == 0.95
 
 
