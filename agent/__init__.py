@@ -1,5 +1,12 @@
 """Agent package — Member B: scoring, ranking, and LLM reasoning."""
 
+from agent.overview import (
+    OverviewEngine,
+    OverviewMockClient,
+    ResearchOverview,
+    ResearchTheme,
+    ResearchVerdict,
+)
 from agent.planner import (
     GeminiClient,
     LLMClient,
@@ -28,10 +35,15 @@ __all__ = [
     "LLMProviderError",
     "LLMResponseError",
     "MockLLMClient",
+    "OverviewEngine",
+    "OverviewMockClient",
     "QueryItem",
     "QueryPlan",
     "QueryPlanner",
     "QueryPlannerError",
+    "ResearchOverview",
+    "ResearchTheme",
+    "ResearchVerdict",
     "normalize_review_score",
     "score_papers",
 ]
