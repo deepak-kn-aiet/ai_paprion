@@ -305,8 +305,11 @@ python -m pytest -q
 
 ```text
 .....................................                                    [100%]
-37 passed in 7.96s
+37 passed
 ```
+
+(The exact runtime varies between runs; the expected result is **37 passed** and no
+failures.)
 
 Other useful variations:
 
