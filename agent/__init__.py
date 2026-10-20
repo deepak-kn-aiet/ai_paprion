@@ -1,5 +1,11 @@
 """Agent package — Member B: scoring, ranking, and LLM reasoning."""
 
+from agent.agent import (
+    ResearchAgent,
+    ResearchAgentError,
+    ResearchAgentResult,
+    RetrievalDiagnostic,
+)
 from agent.overview import (
     OverviewEngine,
     OverviewMockClient,
@@ -41,9 +47,13 @@ __all__ = [
     "QueryPlan",
     "QueryPlanner",
     "QueryPlannerError",
+    "ResearchAgent",
+    "ResearchAgentError",
+    "ResearchAgentResult",
     "ResearchOverview",
     "ResearchTheme",
     "ResearchVerdict",
+    "RetrievalDiagnostic",
     "normalize_review_score",
     "score_papers",
 ]
