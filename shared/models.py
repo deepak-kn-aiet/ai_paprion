@@ -1,6 +1,9 @@
 """Shared Paper model — used by all three members."""
 
+from __future__ import annotations
+
 from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -21,6 +24,8 @@ class Paper(BaseModel):
     influential_citation_count: int | None = None
     review_score: float | None = None
     score: float | None = None  # filled by Member B only
+    score_breakdown: dict[str, float] | None = None  # filled by Member B only
+    is_recommended: bool | None = None  # filled by Member B only
 
     # Authors — safe mutable default via Field
     authors: list[str] = Field(default_factory=list)
