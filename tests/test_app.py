@@ -20,6 +20,7 @@ from app import (
 from mock_data import SCORE_COMPONENT_WEIGHTS
 
 APP_PATH = Path(__file__).resolve().parent.parent / "app.py"
+STYLES_PATH = Path(__file__).resolve().parent.parent / "ui" / "styles.css"
 
 
 def test_mock_results_have_required_fields():
@@ -166,6 +167,40 @@ def test_empty_topic_shows_warning_without_completion_message():
     at.button[0].click().run()
     assert len(at.warning) == 1
     assert len(at.success) == 0
+
+
+def test_warning_message_text_is_unchanged():
+    at = AppTest.from_file(APP_PATH)
+    at.run()
+    at.text_input[0].set_value("   ").run()
+    at.button[0].click().run()
+    assert at.warning[0].value == "Please enter a research topic before searching."
+
+
+@pytest.mark.parametrize(
+    "kind,background,text",
+    [
+        ("Warning", "#fef3c7", "#78350f"),
+        ("Success", "#ecfdf5", "#065f46"),
+        ("Info", "#eef2ff", "#3730a3"),
+        ("Error", "#fef2f2", "#991b1b"),
+    ],
+)
+def test_alert_styles_use_readable_colors(kind, background, text):
+    css = STYLES_PATH.read_text(encoding="utf-8")
+    selector = f'[data-testid="stAlertContainer"]:has([data-testid="stAlertContent{kind}"])'
+    assert selector in css
+    block = css.split(selector, 1)[1].split("}", 1)[0]
+    assert f"background: {background}" in block
+    assert f"color: {text}" in block
+
+
+def test_alert_styles_target_streamlit_alert_test_ids():
+    css = STYLES_PATH.read_text(encoding="utf-8")
+    assert 'data-testid="stAlertContainer"' in css
+    assert "stAlertContentWarning" in css
+    assert "stWarning" not in css
+    assert "stSuccess" not in css
 
 
 def test_score_component_weights_sum_to_one():

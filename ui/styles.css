@@ -1,4 +1,5 @@
-/* Modern AI SaaS Workspace - refined light theme for the AI Research Agent demo app.
+/* Modern AI SaaS Workspace - premium light workspace theme with a compact
+   dark navy sidebar and purple accents for the AI Research Agent demo app.
    Injected by app.py via st.markdown(..., unsafe_allow_html=True). */
 
 /* Typography and canvas: very light lavender base */
@@ -9,7 +10,7 @@
 
 .stApp,
 [data-testid="stAppViewContainer"] {
-    background: #f8f7fc;
+    background: #f7f6fc;
 }
 
 [data-testid="stAppViewContainer"] {
@@ -17,12 +18,12 @@
 }
 
 [data-testid="stHeader"] {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     border-bottom: 1px solid #ece9f7;
 }
 
 [data-testid="stAppViewContainer"] .block-container {
-    padding-top: 2rem;
+    padding-top: 1.75rem;
     padding-bottom: 3rem;
 }
 
@@ -45,9 +46,9 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #ddd8f0;
+    background: #d9d4ee;
     border-radius: 8px;
-    border: 2px solid #f8f7fc;
+    border: 2px solid #f7f6fc;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -55,155 +56,384 @@ footer {
 }
 
 [data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
-    border-color: #fbfaff;
+    border-color: #0b1120;
 }
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: #ddd8f0 transparent;
+    scrollbar-color: #d9d4ee transparent;
 }
 
-/* Page header: small gradient brand mark plus balanced title */
-[data-testid="stMarkdownContainer"] h1 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #4c1d95;
-    font-size: 1.55rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin-bottom: 0.25rem;
-}
-
-[data-testid="stMarkdownContainer"] h1::before {
-    content: "";
-    flex: none;
-    width: 0.72rem;
-    height: 0.72rem;
-    border-radius: 0.22rem;
-    background: linear-gradient(135deg, #7c3aed, #a78bfa);
-    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.35);
-}
-
-@supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    [data-testid="stMarkdownContainer"] h1 {
-        background: linear-gradient(135deg, #4c1d95, #7c3aed);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-}
-
-/* Sidebar title stays solid so its emoji brand mark stays crisp */
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
-    background: none;
-    color: #1e1b4b;
-}
-
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1::before {
-    content: none;
-}
-
-/* Short restrained gradient accent under the page introduction */
-.accent-divider {
-    width: 220px;
-    max-width: 100%;
-    height: 3px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #7c3aed, #c4b5fd 55%, transparent);
-    margin: 0.25rem 0 1.25rem;
-}
-
-[data-testid="stMarkdownContainer"] p {
-    color: #475569;
-}
-
-[data-testid="stMarkdownContainer"] h2,
-[data-testid="stMarkdownContainer"] h3,
-[data-testid="stMarkdownContainer"] strong {
-    color: #1e293b;
-}
-
-[data-testid="stMarkdownContainer"] h2 {
-    margin-top: 1.5rem;
-}
-
-/* Sidebar: compact light panel */
+/* Sidebar: compact dark navy panel */
 [data-testid="stSidebar"] {
-    background: #fbfaff;
-    border-right: 1px solid #eae7f6;
+    background: #0b1120;
+    border-right: 1px solid #1e293b;
 }
 
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li,
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
-    color: #475569;
+    color: #94a3b8;
 }
 
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
-    color: #3b3663;
+    color: #e2e8f0;
 }
 
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-    color: #1e1b4b;
+    color: #f8fafc;
 }
 
 [data-testid="stSidebar"] hr {
-    border-color: #e3def8;
-}
-
-.nav-item {
-    display: block;
-    padding: 0.45rem 0.7rem;
-    margin-bottom: 0.2rem;
-    border-radius: 8px;
-    color: #475569;
-    font-size: 0.9rem;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.nav-item:hover {
-    background: #f3f0fd;
-    color: #5b21b6;
-}
-
-.nav-item-active {
-    background: #ede9fd;
-    color: #6d28d9;
-    font-weight: 600;
+    border-color: #1e293b;
 }
 
 .recent-search {
-    color: #6d28d9;
+    color: #c4b5fd;
     font-size: 0.85rem;
     padding: 0.15rem 0;
 }
 
-/* Paper cards: white, rounded, subtle border, gentle hover lift */
+/* Sidebar navigation: quiet rows, the active view is highlighted */
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: #ffffff;
+    border: 1px solid rgba(167, 139, 250, 0.55);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: left;
+    height: auto;
+    padding: 0.45rem 0.7rem;
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+
+[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] {
+    background: transparent;
+    color: #cbd5e1;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-align: left;
+    height: auto;
+    padding: 0.45rem 0.7rem;
+    box-shadow: none;
+    transition: background 0.15s ease, color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+[data-testid="stSidebar"] button:focus-visible {
+    outline: 2px solid #a78bfa;
+    outline-offset: 2px;
+}
+
+[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"]:hover {
+    background: rgba(148, 163, 184, 0.12);
+    color: #f1f5f9;
+    border-color: rgba(148, 163, 184, 0.22);
+    box-shadow: none;
+    transform: none;
+}
+
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.45);
+    transform: none;
+}
+
+/* Sidebar toggle: Streamlit renders the expand arrow (stExpandSidebarButton)
+   and the collapse chevron (stSidebarCollapseButton) with a faded 60% text
+   colour, which is nearly invisible. Both are restyled as a light lavender
+   chip with a dark navy arrow so the control stays obvious in either state. */
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapseButton"] button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border-radius: 10px;
+    background: #f4f1fe !important;
+    border: 1px solid #ddd6fe !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14) !important;
+    transition: background 0.15s ease, border-color 0.15s ease,
+        box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+[data-testid="stExpandSidebarButton"] span,
+[data-testid="stExpandSidebarButton"] svg,
+[data-testid="stExpandSidebarButton"] path,
+[data-testid="stSidebarCollapseButton"] button span,
+[data-testid="stSidebarCollapseButton"] button svg,
+[data-testid="stSidebarCollapseButton"] button path {
+    color: #4c1d95 !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
+
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="stSidebarCollapseButton"] button:hover {
+    background: #ede9fd !important;
+    border-color: #c4b5fd !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28) !important;
+    transform: translateY(-1px);
+}
+
+[data-testid="stExpandSidebarButton"]:focus-visible,
+[data-testid="stSidebarCollapseButton"] button:focus-visible {
+    outline: 2px solid #7c3aed !important;
+    outline-offset: 2px;
+}
+
+/* Modern page header */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    background: linear-gradient(120deg, #ffffff 0%, #f6f3ff 100%);
+    border: 1px solid #e7e2f8;
+    border-radius: 18px;
+    padding: 1.05rem 1.35rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    margin-bottom: 1.4rem;
+}
+
+.app-header-main {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.app-header-mark {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.32);
+}
+
+/* White brain-circuit glyph inside the gradient brand mark */
+.app-header-icon {
+    display: block;
+    width: 1.4rem;
+    height: 1.4rem;
+    color: #ffffff;
+}
+
+.app-header-text {
+    min-width: 0;
+}
+
+.app-header-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.015em;
+}
+
+.app-header-subtitle {
+    font-size: 0.84rem;
+    color: #64748b;
+    margin-top: 0.2rem;
+}
+
+.app-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.app-header-chip {
+    background: #ede9fd;
+    color: #5b21b6;
+    border: 1px solid #ddd6fe;
+    border-radius: 999px;
+    padding: 0.28rem 0.8rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-header-note {
+    font-size: 0.74rem;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+/* Section heading above a view */
+.panel-heading {
+    margin-bottom: 0.9rem;
+}
+
+.panel-heading-title {
+    font-size: 1.02rem;
+    font-weight: 650;
+    color: #1e293b;
+}
+
+.panel-heading-text {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.2rem;
+}
+
+/* Analytics and verdict summary tiles */
+.stat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin: 0.35rem 0 1.15rem;
+}
+
+.stat-tile {
+    flex: 1 1 190px;
+    background: #ffffff;
+    border: 1px solid #e8e5f5;
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-top: 0.3rem;
+}
+
+.stat-value-text {
+    font-size: 1rem;
+}
+
+.stat-meta {
+    display: block;
+    font-size: 0.74rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* Component average bars */
+.bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0.2rem 0 1.15rem;
+}
+
+.bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bar-label {
+    flex: 0 0 210px;
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+.bar-track {
+    flex: 1 1 auto;
+    height: 8px;
+    background: #ede9fe;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    border-radius: 999px;
+}
+
+.bar-value {
+    flex: none;
+    min-width: 2.8rem;
+    text-align: right;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #5b21b6;
+}
+
+/* Empty state for pages that need a search first */
+.empty-state {
+    background: #ffffff;
+    border: 1px dashed #ddd6fe;
+    border-radius: 16px;
+    padding: 2.2rem 1.6rem;
+    text-align: center;
+}
+
+.empty-state-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: #1e1b4b;
+}
+
+.empty-state-text {
+    font-size: 0.86rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+}
+
+/* Paper cards: white, rounded, gradient accent, gentle hover lift */
 [data-testid="stContainer"] {
+    position: relative;
     background-color: #ffffff !important;
     border: 1px solid #e8e5f5 !important;
-    border-radius: 16px;
+    border-radius: 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    padding: 1.25rem;
+    padding: 1.4rem 1.5rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease,
         transform 0.2s ease;
 }
 
+[data-testid="stContainer"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 18px 18px 0 0;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa 55%, transparent);
+}
+
 [data-testid="stContainer"]:hover {
     border-color: #c9c2f0 !important;
-    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.09);
+    box-shadow: 0 10px 24px rgba(124, 58, 237, 0.09);
     transform: translateY(-2px);
 }
 
-/* Metadata tags: compact lavender pills for rank, year, and venue */
+/* Metadata tags: compact lavender pills for year and venue */
 .tag-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.35rem;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
+    margin-bottom: 0.1rem;
 }
 
 .tag {
@@ -219,28 +449,35 @@ footer {
     white-space: nowrap;
 }
 
-.tag-rank {
-    background: linear-gradient(135deg, #ede9fd, #e0d9fd);
-    border-color: #d5ccf9;
-    color: #5b21b6;
+.tag-year {
+    background: #ffffff;
+    color: #64748b;
+    border-color: #e6e2f6;
 }
 
-/* Small purple score badge with a restrained gradient */
+.tag-venue {
+    background: #f4f1fe;
+    color: #5b21b6;
+    border-color: #ddd6fe;
+}
+
+/* Score badge: solid purple gradient pill, aligned with the card title */
 .badge-wrap {
     text-align: right;
+    padding-top: 0.1rem;
 }
 
 .score-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #f3f0fe, #e7e1fd);
-    color: #5b21b6;
-    border: 1px solid #c4b5fd;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #ffffff;
+    border: 1px solid #5b21b6;
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 600;
-    padding: 0.2rem 0.7rem;
+    padding: 0.22rem 0.75rem;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 /* Compact metric cards with soft gradient borders */
@@ -249,13 +486,14 @@ footer {
     flex-direction: column;
     justify-content: center;
     height: 100%;
+    min-height: 4.9rem;
     background: linear-gradient(#ffffff, #ffffff) padding-box,
         linear-gradient(135deg, #ece7fd, #ddd6fe) border-box;
     border: 1px solid transparent;
     border-radius: 12px;
-    padding: 0.75rem 1rem;
+    padding: 0.8rem 1rem;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
@@ -284,7 +522,7 @@ footer {
     background-color: #fbfaff;
     border: 1px solid #ece9f7;
     border-radius: 14px;
-    margin-bottom: 1rem;
+    margin-bottom: 0.9rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -298,78 +536,219 @@ footer {
     box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06);
 }
 
-/* Text input: white field, purple focus ring */
+/* Form labels and helper text: readable on the light canvas */
+[data-testid="stWidgetLabel"] {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+[data-testid="stTooltipIcon"] {
+    color: #64748b;
+}
+
+/* Captions and other muted copy */
+[data-testid="stCaptionContainer"] .stCaption,
+[data-testid="stCaptionContainer"] p,
+[data-testid="stCaptionContainer"] {
+    color: #4b5563;
+}
+
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] .stCaption,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    color: #a8b4c8;
+}
+
+/* Search input: white field, purple focus ring, matched control height */
 [data-testid="stTextInput"] input {
     background-color: #ffffff;
     color: #1e293b;
     border: 1px solid #d9d4ee;
     border-radius: 10px;
-    padding: 0.55rem 0.85rem;
+    height: 2.75rem;
+    padding: 0 0.9rem;
+    font-size: 0.92rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-testid="stTextInput"] input::placeholder {
+    color: #64748b;
+    opacity: 1;
 }
 
 [data-testid="stTextInput"] input:focus {
     border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14);
+    outline: none;
 }
 
-/* Primary button: restrained purple gradient with soft hover */
+/* Buttons: purple gradient for primary, quiet secondary, plain tertiary */
 .stButton > button {
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    color: #ffffff;
-    border: none;
     border-radius: 10px;
     font-weight: 600;
     padding: 0.55rem 1.2rem;
-    box-shadow: 0 1px 2px rgba(124, 58, 237, 0.25);
     transition: background 0.15s ease, box-shadow 0.15s ease,
-        transform 0.15s ease;
+        transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.stButton > button:hover {
+[data-testid="stBaseButton-primary"] {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #ffffff;
+    border: none;
+    height: 2.75rem;
+    font-size: 0.92rem;
+    box-shadow: 0 1px 2px rgba(124, 58, 237, 0.25);
+}
+
+[data-testid="stBaseButton-primary"]:focus-visible {
+    outline: 2px solid #a78bfa;
+    outline-offset: 2px;
+}
+
+[data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg, #6d28d9, #5b21b6);
     box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
     transform: translateY(-1px);
 }
 
-.stButton > button:active {
+[data-testid="stBaseButton-primary"]:active {
     background: linear-gradient(135deg, #5b21b6, #4c1d95);
     transform: translateY(0);
 }
 
-/* Status banners: white with purple accents; warning keeps a soft amber
-   accent so its cautionary meaning stays clear */
-[data-testid="stSuccess"],
-.stSuccess {
+[data-testid="stBaseButton-secondary"] {
     background: #ffffff;
-    border: 1px solid #c4b5fd;
+    color: #4c1d95;
+    border: 1px solid #ddd6fe;
+}
+
+[data-testid="stBaseButton-secondary"]:hover {
+    background: #f6f3ff;
+    border-color: #c4b5fd;
+}
+
+[data-testid="stBaseButton-tertiary"] {
+    background: transparent;
+    color: #475569;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+
+[data-testid="stBaseButton-tertiary"]:hover {
+    background: #f3f0fd;
     color: #5b21b6;
 }
 
-[data-testid="stInfo"],
-.stInfo {
-    background: #ffffff;
-    border: 1px solid #ddd6fe;
-    color: #4c1d95;
+/* Alerts: Streamlit's default palette paints pale text on a translucent
+   background (warning text is rgb(255,255,194) on a pale yellow fill), which
+   is unreadable on this light canvas. Each kind is selected through its
+   stable stAlertContent<Kind> child, and the message colour is restated so it
+   never inherits the faded theme colour. */
+[data-testid="stAlertContainer"] {
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
-[data-testid="stWarning"],
-.stWarning {
-    background: #ffffff;
-    border: 1px solid #fde68a;
-    color: #92400e;
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #78350f;
 }
 
-/* Progress bars: lavender track, purple gradient fill */
-[data-testid="stProgress"] div[role="progressbar"] {
-    background-color: #ede9fe;
-    height: 8px;
-    border-radius: 999px;
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) [data-testid="stMarkdownContainer"] p {
+    color: #78350f;
 }
 
-[data-testid="stProgress"] div[role="progressbar"] > div {
-    background: linear-gradient(90deg, #7c3aed, #a78bfa);
-    border-radius: 999px;
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) {
+    background: #ecfdf5;
+    border-color: #34d399;
+    color: #065f46;
+}
+
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) [data-testid="stMarkdownContainer"] p {
+    color: #065f46;
+}
+
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #3730a3;
+}
+
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) [data-testid="stMarkdownContainer"] p {
+    color: #3730a3;
+}
+
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]) {
+    background: #fef2f2;
+    border-color: #f87171;
+    color: #991b1b;
+}
+
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]) [data-testid="stMarkdownContainer"] p {
+    color: #991b1b;
+}
+
+/* Alert icons: Streamlit renders no icon for these alerts, so one is added
+   here as a masked SVG and aligned with the message text. */
+[data-testid^="stAlertContent"] > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+[data-testid^="stAlertContent"] > div::before {
+    content: "";
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.12rem;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+[data-testid="stAlertContentWarning"] > div::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+}
+
+[data-testid="stAlertContentSuccess"] > div::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+}
+
+[data-testid="stAlertContentInfo"] > div::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E");
+}
+
+[data-testid="stAlertContentError"] > div::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6'/%3E%3Cpath d='m9 9 6 6'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6'/%3E%3Cpath d='m9 9 6 6'/%3E%3C/svg%3E");
+}
+
+/* Progress bars: lavender track, purple gradient fill.
+   The track and fill carry inline background colors from the theme, so the
+   overrides need !important to replace the default blue. */
+[data-testid="stProgress"] {
+    margin-top: 0.45rem;
+}
+
+[data-testid="stProgressBarTrack"] {
+    background-color: #ede9fe !important;
+    border-radius: 999px !important;
+    height: 10px !important;
+}
+
+[data-testid="stProgressBarTrack"] > div {
+    background: linear-gradient(90deg, #7c3aed, #a78bfa) !important;
+    border-radius: 999px !important;
 }
 
 /* Score breakdown table: lavender header, alternating rows, emphasized total */
@@ -420,7 +799,7 @@ footer {
     border-top: 1px solid #e9e5f7;
     text-align: center;
     font-size: 0.78rem;
-    color: #8a87a8;
+    color: #5f6478;
 }
 
 .app-footer .footer-brand {
