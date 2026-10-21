@@ -1,441 +1,214 @@
-# ai_paprion — AI Research Paper Retrieval Agent
+# ai_paprion — AI Research Agent
 
-ai_paprion is a research-paper retrieval system that aggregates results from
-multiple academic providers, normalizes them into a shared data model,
-deduplicates across providers, enriches open-access availability, and serves
-the unified results through a FastAPI API.
+**ai_paprion** is an academic research platform and intelligent literature exploration agent. It automates literature discovery, multi-criteria paper quality scoring, and evidence-grounded research synthesis, providing both an interactive Streamlit graphical dashboard and a FastAPI backend service.
 
-This repository currently contains the **Member A (Data & Retrieval)** module:
-provider adapters, paper normalization, deduplication, open-access enrichment,
-SQLite query caching, and the FastAPI application. Member B (scoring/ranking)
-and Member C (frontend UI) work is not included in this branch.
+---
 
-## 1. Project Overview
+## 1. Project Overview & Architecture
 
-ai_paprion is intended to become an end-to-end AI research agent that helps
-users discover, rank, and explore academic literature. The current scope
-implements the **retrieval backbone**:
+The project integrates three major modules across team roles:
+1. **Literature Retrieval & Deduplication (Member A)**: Unified parallel searching across **OpenAlex** and **Semantic Scholar**, canonical identifier resolution (`make_paper_id`), multi-source deduplication, optional Unpaywall open-access resolution, SQLite response caching (2-day TTL), and a FastAPI REST API (`main.py`).
+2. **AI Reasoning & Research Agent Orchestration (Member B)**: LLM query planner (`QueryPlanner`), transparent multi-criteria paper scoring (`score_papers`), grounded research overview and verdict synthesis (`OverviewEngine`), and end-to-end research orchestration (`ResearchAgent`).
+3. **Interactive UI & Test Suite (Member C)**: Streamlit web dashboard (`app.py`) featuring modern SaaS lavender styling (`ui/styles.css`), paper cards, expandable metric breakdowns, recent searches, and a 37-test suite.
 
-- Querying **Semantic Scholar** and **OpenAlex** in parallel.
-- Normalizing provider-specific responses into a shared **`Paper`** model.
-- Deduplicating across providers using DOI, arXiv ID, and normalized title.
-- Optionally enriching each paper with **Unpaywall** open-access data.
-- Caching query results in a local **SQLite** database with a two-day TTL.
-- Exposing the pipeline through a **FastAPI** REST API with Swagger docs and
-  CORS configured for the frontend development server.
-
-**Implemented (Member A):** provider adapters, normalization, deduplication,
-metadata merging, canonical paper IDs, Unpaywall enrichment, SQLite cache,
-FastAPI endpoints, CORS, manual test script, and the automated test suite.
-
-**Planned / not yet in this branch:** paper scoring and ranking (Member B),
-frontend UI and agent orchestration (Member C).
-
-## 2. Features
-
-### Provider adapters
-- **Semantic Scholar** (`data/providers/semantic_scholar.py`) — uses the Graph
-  API `/paper/search` endpoint. Sends `x-api-key` when
-  `SEMANTIC_SCHOLAR_API_KEY` is set. Requests title, abstract, year, venue,
-  authors, citation counts, external IDs, open-access PDF, and URL.
-- **OpenAlex** (`data/providers/openalex.py`) — uses the Works API `/works`
-  endpoint. Sends `mailto` (for the polite pool) and `api_key` when configured.
-  Reconstructs abstracts from the inverted index and resolves authors, venue,
-  DOI, arXiv ID, and OpenAlex ID.
-
-### Unified retrieval and normalization
-- `data/search.search()` runs selected providers in parallel via
-  `ThreadPoolExecutor`, normalizes each provider's raw response into a `Paper`,
-  then combines the lists.
-
-### Shared `Paper` model
-- `shared/models.Paper` is a Pydantic v2 `BaseModel` shared by all members.
-  Required fields: `paper_id`, `title`. Optional fields include `abstract`,
-  `venue`, `url`, `pdf_url`, `year`, `citation_count`,
-  `influential_citation_count`, `review_score`, `score` (Member B), `authors`,
-  `is_open_access`, `access_status`, `doi`, `arxiv_id`,
-  `semantic_scholar_id`, `openalex_id`, `citation_source`, and `sources`.
-- `make_paper_id()` derives a canonical `paper_id` with priority
-  **DOI > arXiv ID > Semantic Scholar ID > OpenAlex ID**.
-
-### Deduplication
-`deduplicate_papers()` matches records in this priority order:
-1. **Normalized DOI** (lowercased, URL-prefix stripped).
-2. **Normalized arXiv ID** (URL-prefix stripped, version suffix removed) —
-   skipped if DOIs explicitly conflict.
-3. **Normalized title** (HTML/punctuation stripped, lowercased, ≥3 chars) —
-   skipped if DOIs or arXiv IDs explicitly conflict.
-
-Duplicate records are merged via `merge_papers()`, which preserves the richer
-metadata (longer abstract, higher citation count, more authors, any
-open-access flag) and re-derives the canonical `paper_id`. First-seen order is
-preserved.
-
-### Metadata merging and canonical IDs
-`merge_papers()` combines provider identifiers, keeps the higher citation count
-(crediting the reporting provider via `citation_source`), preferring the longer
-abstract, and appending new sources without duplicates.
-
-### Open-access enrichment (optional)
-`data/providers/unpaywall.py` resolves `is_open_access`, `access_status`
-(`"open"` / `"paywalled"` / `"unknown"`), and a direct `pdf_url` by DOI.
-Requires `UNPAYWALL_EMAIL`. Papers without a DOI are skipped. Runs in parallel
-for batches via `ThreadPoolExecutor`.
-
-### SQLite query cache
-- `data/cache.py` stores serialized `Paper` lists in
-  `.cache/query_cache.db`.
-- Cache key is a SHA-256 hash of the normalized query, limit, offset, sorted
-  provider list, and `enrich_access` flag.
-- **TTL: 2 days (172,800 seconds)** — enforced by `DEFAULT_TTL = 2 * 86400`.
-- Results are cached only when at least one provider succeeded.
-- All cache operations are wrapped in try/except and never raise.
-
-### FastAPI endpoints and CORS
-- `main.py` defines `app = FastAPI(...)` with:
-  - `GET /health` — returns `{"status": "ok"}`.
-  - `GET /api/search` — unified search, returns `list[Paper]`.
-- CORS (`CORSMiddleware`) allows `http://localhost:5173` and
-  `http://127.0.0.1:5173`, methods `GET`, `POST`, `OPTIONS`, header
-  `Content-Type`, with `allow_credentials=False`.
-
-### Error handling, retries, and pagination
-- Every provider adapter never raises: network and HTTP errors are logged and
-  return `[]`.
-- Retry on HTTP 429 (rate limit) with up to 3 attempts and exponential
-  backoff (1s, 2s, 4s) for Semantic Scholar, OpenAlex, and Unpaywall.
-- 10-second request timeout per call.
-- Provider failure isolation: if one provider fails, the other's results are
-  still returned and deduplicated.
-- Semantic Scholar supports `offset`/`limit` (max 100 per page). OpenAlex
-  supports `per_page` (max 200) and `page`; `offset` is converted to a page
-  number automatically.
-
-## 3. Architecture
-
-### Project structure
+> **UI Status Notice**
+> The Streamlit interface (`app.py`) currently runs in **demonstration mode** using sample records from `mock_data.py` with clearly labeled demonstration disclaimers. End-to-end integration between the Streamlit UI and the live `ResearchAgent` orchestration pipeline is the final milestone.
 
 ```
 ai_paprion/
-├── config.py                      # Environment variable loader (only file that reads .env)
-├── main.py                        # FastAPI application: /health, /api/search, CORS
-├── requirements.txt
-├── .env.example                   # Template for provider credentials
-├── .gitignore
+├── app.py                         # Streamlit interactive UI entry point
+├── main.py                        # FastAPI REST API entry point
+├── mock_data.py                   # Demonstration dataset & scoring weights for UI
+├── config.py                      # Central environment configuration loader (.env)
+├── requirements.txt               # Unified project dependencies
+├── .env.example                   # Template for API keys and configuration
+├── .gitignore                     # Git exclusion rules
+│
+├── ui/
+│   └── styles.css                 # SaaS workspace lavender theme for Streamlit
+│
+├── agent/                         # AI Reasoning & Orchestration (Member B)
+│   ├── __init__.py                # Package exports
+│   ├── planner.py                 # LLM multi-query planner (QueryPlanner, GeminiClient)
+│   ├── scoring.py                 # Multi-criteria scoring & ranking (score_papers)
+│   ├── overview.py                # Thematic clusters, verdict & calibrated confidence
+│   └── agent.py                   # ResearchAgent orchestrator (ResearchAgentResult)
+│
+├── data/                          # Data & Retrieval Layer (Member A)
+│   ├── __init__.py                # Public retrieval exports
+│   ├── search.py                  # search(), deduplicate_papers(), merge_papers()
+│   ├── cache.py                   # SQLite cache with 2-day TTL (.cache/query_cache.db)
+│   └── providers/
+│       ├── openalex.py            # OpenAlex Works API adapter (rate limits, backoff)
+│       ├── semantic_scholar.py    # Semantic Scholar Graph API adapter
+│       └── unpaywall.py           # Unpaywall open-access enrichment
 │
 ├── shared/
-│   └── models.py                  # Paper (Pydantic v2) + make_paper_id()
+│   ├── __init__.py
+│   └── models.py                  # Shared Paper schema (Pydantic v2) + make_paper_id()
 │
-├── data/
-│   ├── __init__.py                # Public API re-exports
-│   ├── search.py                  # search() pipeline, deduplicate_papers(), merge_papers()
-│   ├── cache.py                   # SQLite cache (2-day TTL)
-│   └── providers/
-│       ├── __init__.py
-│       ├── semantic_scholar.py    # Semantic Scholar Graph API adapter
-│       ├── openalex.py            # OpenAlex Works API adapter
-│       └── unpaywall.py           # Unpaywall OA enrichment by DOI
-│
-├── scripts/
-│   └── manual_retrieval_test.py   # Interactive CLI + CLI flags for manual testing
-│
-└── tests/
+└── tests/                         # Comprehensive automated test suite (287 tests)
     ├── __init__.py
-    ├── test_smoke.py              # Config import smoke test
-    ├── test_api.py                # FastAPI CORS and search endpoint tests
-    └── data/
-        ├── test_models.py
-        ├── test_cache.py
-        ├── test_search.py
-        ├── test_semantic_scholar.py
-        ├── test_openalex.py
-        └── test_unpaywall.py
+    ├── test_app.py                # Streamlit UI & mock data tests (37 tests)
+    ├── test_agent.py              # ResearchAgent orchestration tests
+    ├── test_planner.py            # QueryPlanner tests
+    ├── test_scoring.py            # Multi-criteria paper scoring tests
+    ├── test_overview.py           # OverviewEngine & verdict synthesis tests
+    ├── test_api.py                # FastAPI REST endpoint tests
+    ├── test_smoke.py              # Configuration import smoke test
+    └── data/                      # Retrieval & provider test suite
+        ├── test_openalex.py       # OpenAlex mocked provider tests
+        ├── test_semantic_scholar.py# Semantic Scholar mocked provider tests
+        ├── test_unpaywall.py      # Unpaywall mocked provider tests
+        ├── test_search.py         # Unified search & deduplication tests
+        ├── test_cache.py          # SQLite query cache tests
+        └── test_models.py         # Paper model & make_paper_id tests
 ```
 
-### Retrieval flow
+---
 
-```mermaid
-flowchart LR
-    Client[Client / Browser] -->|HTTP request| API[FastAPI app]
-    API -->|GET /api/search| Search[data.search.search]
-    Search -->|cache check| Cache[(SQLite cache<br/>2-day TTL)]
-    Cache -->|hit| Search
-    Search -->|miss, parallel| S2[Semantic Scholar adapter]
-    Search -->|miss, parallel| OA[OpenAlex adapter]
-    S2 --> Paper[Paper records]
-    OA --> Paper
-    Paper --> Dedup[deduplicate_papers]
-    Dedup --> Merge[merge_papers]
-    Merge -->|if enrich_access| Unpaywall[Unpaywall enrichment]
-    Unpaywall --> Final[Final Paper list]
-    Merge -->|if not enrich| Final
-    Final -->|save on provider success| Cache
-    Final --> API
-    API -->|JSON list[Paper]| Client
-```
+## 2. Key Features
 
-Cache lookup happens **before** provider calls. Enrichment happens **after**
-deduplication and limiting. Cache save happens **after** enrichment, only if at
-least one provider succeeded.
+### A. Streamlit Interactive Dashboard (`app.py`)
+- **Modern SaaS Aesthetics**: Custom lavender and clean white UI styles with responsive containers and tag rows.
+- **Paper Cards**: Visual displays showing publication rank, year, venue, citation metrics, author list, and links to papers or PDFs.
+- **Score Breakdown Expanders**: Transparent display of weighted component contributions (citation impact, venue quality, recency, review score, influential citations) with proportional weight redistribution when metrics are missing.
+- **Thematic Overviews & Verdicts**: Expandable containers displaying synthesized research problems, contributions, and consensus recommendations.
+- **Recent Searches & Progress**: Session-based query history and real-time execution progress indicators.
 
-## 4. Technology Stack
+### B. AI Research Agent (`agent/`)
+- **Query Planner (`agent/planner.py`)**: Uses Google Gemini (or mock mode) to analyze a broad research question and generate 3–5 targeted academic queries spanning foundational surveys, technical methodologies, empirical benchmarks, and real-world applications.
+- **Multi-Criteria Scoring (`agent/scoring.py`)**: Ranks candidate papers using configurable weighted components: citation impact, influential citation ratio, venue tier quality, recency decay, and peer review score.
+- **Overview & Verdict Engine (`agent/overview.py`)**: Synthesizes top-ranked candidate evidence into thematic clusters, key empirical findings, unresolved gaps, calibrated confidence levels, and an executive verdict statement with 100% citation referential integrity.
+- **Research Agent Orchestrator (`agent/agent.py`)**: Connects planning, multi-query retrieval, cross-query deduplication, ranking, and synthesis into `ResearchAgent.run()`.
 
-| Technology | Purpose |
-|---|---|
-| **Python 3.11+** | Runtime (uses `list[str] \| None` and `X \| None` syntax) |
-| **FastAPI 0.143** | REST API framework, automatic Swagger/OpenAPI docs |
-| **Uvicorn 0.54** | ASGI server for running the FastAPI app |
-| **Pydantic 2.14** | Data validation and serialization for the `Paper` model |
-| **Requests 2.34** | HTTP client for provider API calls |
-| **python-dotenv 1.2** | Loads environment variables from `.env` |
-| **SQLite** (stdlib `sqlite3`) | Local query cache storage |
-| **pytest 9.1** | Automated test framework |
-| **httpx 0.28** | HTTP client used by FastAPI's `TestClient` in tests |
+### C. Unified Literature Retrieval (`data/`)
+- **Dual Academic Providers**: Executes concurrent searches across **OpenAlex** (`data/providers/openalex.py`) and **Semantic Scholar** (`data/providers/semantic_scholar.py`).
+- **Resilience & Backoff**: Handles HTTP 429 rate limits with exponential backoff (1s, 2s, 4s retries), 10s request timeouts, and provider failure isolation.
+- **Deduplication & Merging**: Cross-matches records by normalized DOI, arXiv ID, and fuzzy title, preserving the most complete metadata and recomputing canonical IDs via `make_paper_id()`.
+- **Open-Access Enrichment**: Resolves OA PDF links via Unpaywall.
+- **Local SQLite Cache**: Stores serialized search results for 2 days in `.cache/query_cache.db`.
 
-## 5. Prerequisites
+### D. FastAPI REST Server (`main.py`)
+- `GET /health`: Health check endpoint returning `{"status": "ok"}`.
+- `GET /api/search`: Unified academic search endpoint with query, limit, offset, provider selection, and open-access enrichment flags. Includes CORS middleware for frontend integration.
 
-- **Windows PowerShell** (5.1 or later).
-- **Python 3.11 or newer** — the code uses PEP 604 union syntax
-  (`str | None`, `list[str] | None`).
-- **Git**.
-- Internet access for live provider tests (Semantic Scholar, OpenAlex,
-  Unpaywall).
-- Optional credentials (see [Environment variables](#7-environment-variables)):
-  - `SEMANTIC_SCHOLAR_API_KEY` — raises the rate limit (optional; the free tier works without it).
-  - `OPENALEX_EMAIL` — puts you in OpenAlex's polite pool (optional).
-  - `OPENALEX_API_KEY` — raises the OpenAlex rate limit (optional).
-  - `UNPAYWALL_EMAIL` — **required** only when `enrich_access=true`.
+---
 
-## 6. Installation and Environment Setup
+## 3. Technology Stack
 
-```powershell
+| Component | Technology | Description |
+|---|---|---|
+| **Language** | Python 3.11+ | Uses modern typing (`list[str] \| None`, PEP 604) |
+| **Frontend UI** | Streamlit (>=1.30.0) | Interactive dashboard interface |
+| **Backend REST API** | FastAPI (0.143.1) & Uvicorn (0.54.0) | High-performance async ASGI API service |
+| **Data Validation** | Pydantic v2 (2.14.1) | Strongly typed schemas (`Paper`, `ResearchOverview`, `QueryPlan`) |
+| **LLM Provider** | Google GenAI SDK (1.60.0) | Gemini models (`gemini-2.5-flash`) for reasoning |
+| **HTTP Client** | Requests (2.34.2) & HTTPX (0.28.1) | Provider API requests and FastAPI testing |
+| **Environment** | python-dotenv (1.2.4) | Secure `.env` loading |
+| **Caching** | SQLite3 (Python standard library) | Local query cache |
+| **Testing** | Pytest (9.1.1) | Automated test suite (287 tests) |
+
+---
+
+## 4. Installation & Setup
+
+### Prerequisites
+- Python 3.11 or newer.
+- Git.
+- Internet access for live academic searches and Gemini API queries.
+
+### Setup Instructions
+
+```bash
+# Clone the repository
 git clone https://github.com/deepak-kn-aiet/ai_paprion.git
 cd ai_paprion
 
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows PowerShell: .\.venv\Scripts\Activate.ps1
 
-python -m pip install --upgrade pip
+# Upgrade pip and install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Activating the virtual environment makes `.venv`'s Python interpreter and all
-installed packages available in the current PowerShell session. Deactivate with
-`deactivate` when done.
+---
 
-If PowerShell blocks `Activate.ps1` with a `PSSecurityException`, run the
-following **session-only** workaround (it does not change the machine-wide
-policy):
+## 5. Environment Variables & Credentials
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
+Copy the example environment template to `.env`:
+
+```bash
+cp .env.example .env
 ```
 
-## 7. Environment Variables
+Edit `.env` to configure your API keys (the `.env` file is excluded from Git):
 
-Copy the example file to `.env`:
+```ini
+# Academic Retrieval Providers
+SEMANTIC_SCHOLAR_API_KEY=   # Optional: increases Semantic Scholar rate limit
+OPENALEX_EMAIL=             # Optional: polite pool identification for OpenAlex
+OPENALEX_API_KEY=           # Optional: authenticated OpenAlex API key
+UNPAYWALL_EMAIL=            # Optional: required only for open-access PDF enrichment
 
-```powershell
-Copy-Item .env.example .env
+# AI Reasoning & LLM Configuration (Member B)
+GEMINI_API_KEY=your_gemini_api_key_here
+LLM_MODEL=gemini-2.5-flash
+LLM_PROVIDER=gemini         # Set to "mock" for offline deterministic testing
 ```
 
-Then edit `.env` with your values. `.env` is listed in `.gitignore` and must
-remain untracked — never commit it.
+---
 
-| Variable | Required? | Description |
-|---|---|---|
-| `SEMANTIC_SCHOLAR_API_KEY` | Optional | Semantic Scholar API key for a higher rate limit. |
-| `OPENALEX_EMAIL` | Optional | Email for OpenAlex's polite pool. |
-| `OPENALEX_API_KEY` | Optional | OpenAlex API key for a higher rate limit. |
-| `UNPAYWALL_EMAIL` | Optional (required for enrichment) | Contact email for the Unpaywall API. |
+## 6. Running the Applications
 
-- **Semantic Scholar** and **OpenAlex** work without any credentials on their
-  free tiers.
-- **Unpaywall** requires an email only when calling `enrich_access=true`.
-  Without it, enrichment is skipped and existing metadata is preserved.
+### A. Run the Streamlit Dashboard
+Launch the interactive web UI:
+```bash
+streamlit run app.py
+```
+Open your browser at `http://localhost:8501`.
 
-## 8. Running the Application
+### B. Run the FastAPI REST Server
+Start the backend API server:
+```bash
+uvicorn main:app --reload --port 8000
+```
+- API Base: `http://localhost:8000`
+- Interactive Swagger UI Documentation: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/health`
+- Unified Search: `http://localhost:8000/api/search?query=retrieval+augmented+generation&limit=5`
 
-Start the backend from the project root:
+---
 
-```powershell
-python -m uvicorn main:app --reload
+## 7. Running the Automated Test Suite
+
+The repository includes a comprehensive 287-test suite covering the UI, scoring, planning, overview engine, agent orchestration, and provider retrieval:
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with verbose output
+pytest -v
+
+# Run UI tests only
+pytest tests/test_app.py -v
+
+# Run AI Agent orchestration and logic tests only
+pytest tests/test_agent.py tests/test_planner.py tests/test_scoring.py tests/test_overview.py -v
+
+# Run retrieval provider tests only
+pytest tests/data/ -v
 ```
 
-- Run this from the `ai_paprion/` directory so that imports like
-  `from data.search import search` resolve correctly.
-- `main:app` refers to the `app` object (`FastAPI` instance) in `main.py`.
-- The `--reload` flag restarts the server on file changes (use only in
-  development).
+All unit tests run completely offline using mocked network fixtures and do not require live API keys or external network connections.
 
-Once running:
+---
 
-| Endpoint | URL |
-|---|---|
-| Health check | `http://127.0.0.1:8000/health` |
-| Swagger UI | `http://127.0.0.1:8000/docs` |
-| Search API | `http://127.0.0.1:8000/api/search` |
+## 8. Team Roles & Contribution Matrix
 
-### `GET /api/search`
-
-Query parameters:
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `query` | string | *(required)* | Research query string. |
-| `limit` | int | `10` | Max papers to return (1–100). |
-| `offset` | int | `0` | Result offset for pagination. |
-| `providers` | list[string] | all | One or both of `semantic_scholar`, `openalex`. |
-| `enrich_access` | bool | `false` | Enrich with Unpaywall OA data. |
-| `use_cache` | bool | `true` | Use the local SQLite cache. |
-
-Example request (URL-encoded):
-
-```
-http://127.0.0.1:8000/api/search?query=AI%20for%20disease%20prediction&limit=5
-```
-
-Response: a JSON array of `Paper` objects (see [API examples](#10-api-examples)).
-
-## 9. Manual Testing Instructions
-
-1. **Activate the virtual environment:**
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-
-2. **Start the API** and leave that terminal running:
-   ```powershell
-   python -m uvicorn main:app --reload
-   ```
-
-3. **Test `/health`** in a browser: open `http://127.0.0.1:8000/health`.
-   You should see `{"status":"ok"}`.
-
-4. **Test a real search via Swagger:** open `http://127.0.0.1:8000/docs`,
-   expand `GET /api/search`, click **Try it out**, enter a `query`, and click
-   **Execute**.
-
-5. **PowerShell `Invoke-RestMethod` example:**
-   ```powershell
-   $params = @{ query = "AI for disease prediction"; limit = 5 }
-   $papers = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/search" -Body $params
-   $papers | Select-Object title, year, citation_count, doi
-   ```
-
-### Manual retrieval script
-
-The interactive CLI at `scripts/manual_retrieval_test.py` provides live
-diagnostics:
-
-```powershell
-python scripts/manual_retrieval_test.py
-```
-
-Menu options:
-
-| Option | Description |
-|---|---|
-| 1 | Run unified search across all providers (interactive query, limit, providers, enrichment, cache) |
-| 2 | Test Semantic Scholar API directly |
-| 3 | Test OpenAlex API directly |
-| 4 | Test Unpaywall DOI availability resolution |
-| 5 | Run Cache Hit / Miss benchmark demonstration |
-| 6 | Run isolated 2-day Cache TTL expiry simulation |
-| 7 | Run isolated cache storage failure / resilience simulation |
-| 8 | Show environment credentials status (masked) |
-| 9 | Run the automated mocked test suite (pytest) |
-| 0 | Exit |
-
-CLI flags for non-interactive use:
-
-```powershell
-python scripts/manual_retrieval_test.py --query "transformer attention" --limit 5 --enrich
-python scripts/manual_retrieval_test.py --status
-python scripts/manual_retrieval_test.py --benchmark
-```
-
-### Automated tests
-
-Run the full suite (all tests are mocked — no live provider calls):
-
-```powershell
-python -m pytest -v
-```
-
-Coverage: model normalization, deduplication, merging, cache (set/get/clear/TTL),
-provider normalization, Unpaywall enrichment, FastAPI CORS behavior, and the
-search endpoint. **133 tests pass** as of this commit.
-
-### Provider, cache, and enrichment testing
-
-- **Provider-specific:** use menu options 2 and 3 (live) or the provider test
-  files under `tests/data/` (mocked).
-- **Cache hit/miss:** menu option 5 demonstrates that the second identical
-  query is served from SQLite and is significantly faster.
-- **Cache expiration:** menu option 6 backdates a cache entry by 3 days in an
-  isolated database and confirms it is treated as expired (2-day TTL).
-- **Cache resilience:** menu option 7 writes corrupted JSON into an isolated
-  database and confirms the cache lookup returns `None` without crashing.
-- **Access enrichment:** run `enrich_access=true` on the API or use menu option
-  4 to resolve a single DOI's OA status via Unpaywall.
-
-Live provider results depend on network availability and provider rate limits.
-All provider calls include 429 retries with exponential backoff.
-
-## 10. API Examples
-
-### Request
-
-```
-GET /api/search?query=AI%20for%20disease%20prediction&limit=2
-```
-
-### Response structure
-
-A JSON array of `Paper` objects:
-
-```json
-[
-  {
-    "paper_id": "doi:10.1038/example",
-    "title": "Example Paper Title",
-    "abstract": "The abstract text...",
-    "venue": "Nature",
-    "url": "https://doi.org/10.1038/example",
-    "pdf_url": "https://example.com/paper.pdf",
-    "year": 2024,
-    "citation_count": 150,
-    "influential_citation_count": 12,
-    "review_score": null,
-    "score": null,
-    "authors": ["Alice Smith", "Bob Jones"],
-    "is_open_access": true,
-    "access_status": "open",
-    "doi": "10.1038/example",
-    "arxiv_id": null,
-    "semantic_scholar_id": "abc123",
-    "openalex_id": "W12345",
-    "citation_source": "semantic_scholar",
-    "sources": ["semantic_scholar", "openalex", "unpaywall"]
-  }
-]
-```
-
-### Important fields
-
-| Field | Description |
-|---|---|
-| `paper_id` | Canonical ID (DOI > arXiv > S2 > OpenAlex). |
-| `title` | Paper title. |
-| `abstract` | Abstract text (reconstructed from OpenAlex inverted index when needed). |
-| `year` | Publication year. |
-| `authors` | List of author display names. |
-| `doi`, `arxiv_id`, `semantic_scholar_id`, `openalex_id` | Provider identifiers. |
-| `url`, `pdf_url` | Landing page and direct PDF URLs. |
-| `citation_count`, `influential_citation_count` | Citation metadata. |
-| `citation_source` | Provider that reported the citation count. |
-| `is_open_access`, `access_status` | Open-access availability (from provider data or Unpaywall). |
-| `sources` | List of providers that returned this paper. |
-| `score` | Ranking score — `null` until Member B implements scoring. |
+- **Member A (Data & Retrieval)**: Built the multi-provider retrieval pipeline (`data/providers/`), deduplication, identifier canonicalization, Unpaywall OA resolver, SQLite cache, and FastAPI API (`main.py`).
+- **Member B (AI Reasoning & Orchestration)**: Implemented the Gemini query planner (`agent/planner.py`), paper scoring algorithm (`agent/scoring.py`), overview and verdict synthesis engine (`agent/overview.py`), and end-to-end orchestration (`agent/agent.py`).
+- **Member C (Frontend UI & Testing)**: Designed and implemented the Streamlit workspace (`app.py`), custom theme (`ui/styles.css`), paper cards, demonstration dataset (`mock_data.py`), and automated UI tests (`tests/test_app.py`).

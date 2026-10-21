@@ -1,0 +1,434 @@
+/* Modern AI SaaS Workspace - refined light theme for the AI Research Agent demo app.
+   Injected by app.py via st.markdown(..., unsafe_allow_html=True). */
+
+/* Typography and canvas: very light lavender base */
+.stApp {
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+        Arial, sans-serif;
+}
+
+.stApp,
+[data-testid="stAppViewContainer"] {
+    background: #f8f7fc;
+}
+
+[data-testid="stAppViewContainer"] {
+    color: #1e293b;
+}
+
+[data-testid="stHeader"] {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid #ece9f7;
+}
+
+[data-testid="stAppViewContainer"] .block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+/* Slim lavender scrollbars where supported */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ddd8f0;
+    border-radius: 8px;
+    border: 2px solid #f8f7fc;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c4b5fd;
+}
+
+[data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
+    border-color: #fbfaff;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #ddd8f0 transparent;
+}
+
+/* Page header: small gradient brand mark plus balanced title */
+[data-testid="stMarkdownContainer"] h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4c1d95;
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+}
+
+[data-testid="stMarkdownContainer"] h1::before {
+    content: "";
+    flex: none;
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 0.22rem;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.35);
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    [data-testid="stMarkdownContainer"] h1 {
+        background: linear-gradient(135deg, #4c1d95, #7c3aed);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+}
+
+/* Sidebar title stays solid so its emoji brand mark stays crisp */
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
+    background: none;
+    color: #1e1b4b;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1::before {
+    content: none;
+}
+
+/* Short restrained gradient accent under the page introduction */
+.accent-divider {
+    width: 220px;
+    max-width: 100%;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7c3aed, #c4b5fd 55%, transparent);
+    margin: 0.25rem 0 1.25rem;
+}
+
+[data-testid="stMarkdownContainer"] p {
+    color: #475569;
+}
+
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3,
+[data-testid="stMarkdownContainer"] strong {
+    color: #1e293b;
+}
+
+[data-testid="stMarkdownContainer"] h2 {
+    margin-top: 1.5rem;
+}
+
+/* Sidebar: compact light panel */
+[data-testid="stSidebar"] {
+    background: #fbfaff;
+    border-right: 1px solid #eae7f6;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
+    color: #475569;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {
+    color: #3b3663;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+    color: #1e1b4b;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: #e3def8;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.45rem 0.7rem;
+    margin-bottom: 0.2rem;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+    background: #f3f0fd;
+    color: #5b21b6;
+}
+
+.nav-item-active {
+    background: #ede9fd;
+    color: #6d28d9;
+    font-weight: 600;
+}
+
+.recent-search {
+    color: #6d28d9;
+    font-size: 0.85rem;
+    padding: 0.15rem 0;
+}
+
+/* Paper cards: white, rounded, subtle border, gentle hover lift */
+[data-testid="stContainer"] {
+    background-color: #ffffff !important;
+    border: 1px solid #e8e5f5 !important;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    padding: 1.25rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+[data-testid="stContainer"]:hover {
+    border-color: #c9c2f0 !important;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.09);
+    transform: translateY(-2px);
+}
+
+/* Metadata tags: compact lavender pills for rank, year, and venue */
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+.tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #6d28d9;
+    background: #f6f3fe;
+    border: 1px solid #e4defa;
+    border-radius: 999px;
+    padding: 0.12rem 0.55rem;
+    white-space: nowrap;
+}
+
+.tag-rank {
+    background: linear-gradient(135deg, #ede9fd, #e0d9fd);
+    border-color: #d5ccf9;
+    color: #5b21b6;
+}
+
+/* Small purple score badge with a restrained gradient */
+.badge-wrap {
+    text-align: right;
+}
+
+.score-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #f3f0fe, #e7e1fd);
+    color: #5b21b6;
+    border: 1px solid #c4b5fd;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.7rem;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12);
+}
+
+/* Compact metric cards with soft gradient borders */
+.metric-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(135deg, #ece7fd, #ddd6fe) border-box;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.metric-card:hover {
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.metric-label {
+    display: block;
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    display: block;
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+/* Expanders: soft lavender sections with gentle hover */
+[data-testid="stExpander"] {
+    background-color: #fbfaff;
+    border: 1px solid #ece9f7;
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-testid="stExpander"] details > summary {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+[data-testid="stExpander"]:hover {
+    border-color: #c9c2f0;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06);
+}
+
+/* Text input: white field, purple focus ring */
+[data-testid="stTextInput"] input {
+    background-color: #ffffff;
+    color: #1e293b;
+    border: 1px solid #d9d4ee;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-testid="stTextInput"] input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+/* Primary button: restrained purple gradient with soft hover */
+.stButton > button {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.55rem 1.2rem;
+    box-shadow: 0 1px 2px rgba(124, 58, 237, 0.25);
+    transition: background 0.15s ease, box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(135deg, #6d28d9, #5b21b6);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    transform: translateY(-1px);
+}
+
+.stButton > button:active {
+    background: linear-gradient(135deg, #5b21b6, #4c1d95);
+    transform: translateY(0);
+}
+
+/* Status banners: white with purple accents; warning keeps a soft amber
+   accent so its cautionary meaning stays clear */
+[data-testid="stSuccess"],
+.stSuccess {
+    background: #ffffff;
+    border: 1px solid #c4b5fd;
+    color: #5b21b6;
+}
+
+[data-testid="stInfo"],
+.stInfo {
+    background: #ffffff;
+    border: 1px solid #ddd6fe;
+    color: #4c1d95;
+}
+
+[data-testid="stWarning"],
+.stWarning {
+    background: #ffffff;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+/* Progress bars: lavender track, purple gradient fill */
+[data-testid="stProgress"] div[role="progressbar"] {
+    background-color: #ede9fe;
+    height: 8px;
+    border-radius: 999px;
+}
+
+[data-testid="stProgress"] div[role="progressbar"] > div {
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    border-radius: 999px;
+}
+
+/* Score breakdown table: lavender header, alternating rows, emphasized total */
+.stMarkdown table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stMarkdown th {
+    background: #f4f2fd;
+    color: #4c1d95;
+    border: 1px solid #e6e2f6;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+}
+
+.stMarkdown td {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #ece9f7;
+    padding: 0.45rem 0.75rem;
+}
+
+.stMarkdown tbody tr:nth-child(even) td {
+    background: #faf9fe;
+}
+
+.stMarkdown tbody tr:last-child td {
+    background: #f3effd;
+    font-weight: 600;
+}
+
+/* Links: purple with deeper purple hover */
+[data-testid="stMarkdownContainer"] a {
+    color: #7c3aed;
+    text-decoration: none;
+}
+
+[data-testid="stMarkdownContainer"] a:hover {
+    color: #6d28d9;
+    text-decoration: underline;
+}
+
+/* Discreet branded footer */
+.app-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9e5f7;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #8a87a8;
+}
+
+.app-footer .footer-brand {
+    color: #7c3aed;
+    font-weight: 600;
+}
+
+.app-footer .footer-sep {
+    margin: 0 0.5rem;
+    color: #c9c4e3;
+}
