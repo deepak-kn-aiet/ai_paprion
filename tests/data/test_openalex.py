@@ -2,11 +2,9 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 import requests
 
 from data.providers import openalex
-
 
 # ---------------------------------------------------------------------------
 # Sample OpenAlex API fixtures

@@ -1,8 +1,9 @@
 """Tests for the shared Paper model and make_paper_id helper."""
 
 import pytest
-from shared.models import Paper, make_paper_id
+from pydantic import ValidationError
 
+from shared.models import Paper, make_paper_id
 
 # --- Paper creation ---
 
@@ -35,13 +36,13 @@ def test_minimal_paper_defaults():
 
 def test_missing_title_raises():
     """title is required — omitting it must raise ValidationError."""
-    with pytest.raises(Exception):  # Pydantic ValidationError
+    with pytest.raises(ValidationError):
         Paper(paper_id="doi:10.1234/test")
 
 
 def test_invalid_access_status_raises():
     """access_status must be one of the three allowed literals."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Paper(paper_id="doi:10.1234/test", title="T", access_status="maybe")
 
 

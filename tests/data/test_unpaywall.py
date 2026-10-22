@@ -2,12 +2,10 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 import requests
 
 from data.providers import unpaywall
 from shared.models import Paper
-
 
 # ---------------------------------------------------------------------------
 # Test Fixtures & Helpers

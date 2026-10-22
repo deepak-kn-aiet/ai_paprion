@@ -1,13 +1,10 @@
 """Tests for the Semantic Scholar provider (all mocked, no real API calls)."""
 
-import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
 import requests
 
 from data.providers import semantic_scholar as s2
-
 
 # ---------------------------------------------------------------------------
 # Sample API response fixtures

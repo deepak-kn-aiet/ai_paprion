@@ -5,7 +5,15 @@ from unittest.mock import patch
 import pytest
 
 from data.cache import clear_cache
-from data.search import deduplicate_papers, merge_papers, normalize_arxiv_id, normalize_doi, normalize_title, search, unified_search
+from data.search import (
+    deduplicate_papers,
+    merge_papers,
+    normalize_arxiv_id,
+    normalize_doi,
+    normalize_title,
+    search,
+    unified_search,
+)
 from shared.models import Paper
 
 

@@ -1,6 +1,5 @@
 """Unit tests for SQLite search and citation response cache."""
 
-import json
 import sqlite3
 import time
 from pathlib import Path
@@ -11,7 +10,6 @@ import pytest
 from data import cache
 from data.search import search
 from shared.models import Paper
-
 
 # ---------------------------------------------------------------------------
 # Fixtures & Helpers
