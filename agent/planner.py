@@ -40,6 +40,10 @@ class LLMProviderError(QueryPlannerError):
     """Raised when the underlying LLM provider call fails."""
 
 
+class LLMRateLimitError(LLMProviderError):
+    """Raised when an LLM provider hits rate limits or quota exhaustion."""
+
+
 class LLMResponseError(QueryPlannerError):
     """Raised when the LLM returns an unparseable, malformed, or invalid response."""
 
@@ -255,6 +259,12 @@ class GeminiClient(LLMClient):
                 config=config,
             )
         except Exception as err:
+            err_msg = str(err).lower()
+            if "429" in err_msg or "resource_exhausted" in err_msg or "rate limit" in err_msg or "quota" in err_msg:
+                raise LLMRateLimitError(
+                    "Gemini API quota or rate limit exceeded. Please wait a moment before retrying, "
+                    "or switch your LLM_PROVIDER in .env."
+                ) from err
             raise LLMProviderError(f"Gemini API request failed: {err}") from err
 
         text = getattr(response, "text", None)
@@ -262,6 +272,103 @@ class GeminiClient(LLMClient):
             raise LLMResponseError("Gemini returned an empty response.")
 
         return str(text)
+
+
+class GroqClient(LLMClient):
+    """Client for Groq models using the official groq SDK."""
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "llama-3.3-70b-versatile",
+    ) -> None:
+        if not api_key:
+            raise LLMConfigurationError(
+                "Groq API key is required when using LLM_PROVIDER=groq. "
+                "Set GROQ_API_KEY in your environment or .env file."
+            )
+        self.api_key = api_key
+        self.model = model
+
+        try:
+            from groq import Groq
+
+            self._client = Groq(api_key=self.api_key)
+        except Exception as err:
+            raise LLMConfigurationError(f"Failed to initialize Groq client: {err}") from err
+
+    def generate_text(self, prompt: str, system_instruction: str | None = None) -> str:
+        messages: list[dict[str, str]] = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,  # type: ignore[arg-type]
+                temperature=0.2,
+                response_format={"type": "json_object"},
+                max_tokens=4096,
+            )
+        except Exception as err:
+            err_name = type(err).__name__
+            status_code = getattr(err, "status_code", None)
+            err_msg = str(err).lower()
+            if err_name == "RateLimitError" or status_code == 429 or "rate limit" in err_msg or "quota" in err_msg:
+                raise LLMRateLimitError(
+                    "Groq API quota or rate limit exceeded. Please wait a moment before retrying, "
+                    "or switch your LLM_PROVIDER (e.g. to 'gemini') in .env."
+                ) from err
+            raise LLMProviderError(f"Groq API request failed: {err}") from err
+
+        choice = response.choices[0]
+        text = choice.message.content
+        if not text or not str(text).strip():
+            raise LLMResponseError("Groq returned an empty response.")
+
+        return str(text)
+
+
+# ---------------------------------------------------------------------------
+# Deterministic Query Planning
+# ---------------------------------------------------------------------------
+
+
+def generate_deterministic_query_plan(topic: str) -> QueryPlan:
+    """Decompose a research topic deterministically into 4 diverse, high-signal academic queries.
+
+    Produces distinct queries spanning foundational, methodology, benchmarks,
+    and applications/recent advances without consuming LLM API quota.
+    """
+    clean_topic = topic.strip()
+    if not clean_topic:
+        raise ValueError("Topic must be a non-empty string.")
+
+    query_items = [
+        QueryItem(
+            query=f"{clean_topic} survey foundations overview",
+            intent="foundational",
+            rationale=f"Captures foundational theory, seminal papers, and survey literature on {clean_topic}.",
+        ),
+        QueryItem(
+            query=f"{clean_topic} neural architecture algorithms methods",
+            intent="methodology",
+            rationale=f"Captures core technical mechanisms, algorithmic formulations, and architectures for {clean_topic}.",
+        ),
+        QueryItem(
+            query=f"{clean_topic} benchmark dataset empirical evaluation",
+            intent="benchmarks",
+            rationale=f"Captures standard empirical benchmarks, evaluation datasets, and comparative metrics for {clean_topic}.",
+        ),
+        QueryItem(
+            query=f"{clean_topic} practical applications recent advances",
+            intent="applications",
+            rationale=f"Captures domain applications, real-world case studies, and state-of-the-art advances in {clean_topic}.",
+        ),
+    ]
+
+    return QueryPlan(topic=clean_topic, queries=query_items)
 
 
 # ---------------------------------------------------------------------------
@@ -319,12 +426,19 @@ class QueryPlanner:
         provider: str | None = None,
         api_key: str | None = None,
         model: str | None = None,
+        deterministic: bool | None = None,
     ) -> None:
         if client is not None:
             self.client = client
+            self.deterministic = bool(deterministic) if deterministic is not None else False
             return
 
         resolved_provider = (provider or config.LLM_PROVIDER).strip().lower()
+        self.deterministic = (
+            deterministic
+            if deterministic is not None
+            else (False if resolved_provider in ("mock", "offline") else config.USE_DETERMINISTIC_PLANNER)
+        )
 
         if resolved_provider in ("mock", "offline"):
             self.client = MockLLMClient()
@@ -332,10 +446,14 @@ class QueryPlanner:
             resolved_key = api_key or config.GEMINI_API_KEY
             resolved_model = model or config.LLM_MODEL
             self.client = GeminiClient(api_key=resolved_key, model=resolved_model)
+        elif resolved_provider == "groq":
+            resolved_key = api_key or config.GROQ_API_KEY
+            resolved_model = model or config.GROQ_MODEL
+            self.client = GroqClient(api_key=resolved_key, model=resolved_model)
         else:
             raise LLMConfigurationError(
                 f"Unsupported LLM provider: '{resolved_provider}'. "
-                "Supported providers are 'gemini' and 'mock'."
+                "Supported providers are 'gemini', 'groq', and 'mock'."
             )
 
     def plan(self, topic: str) -> QueryPlan:
@@ -364,6 +482,9 @@ class QueryPlanner:
             raise ValueError("Topic must be a non-empty string.")
 
         clean_topic = topic.strip()
+        if self.deterministic:
+            return generate_deterministic_query_plan(clean_topic)
+
         user_prompt = PLANNER_USER_PROMPT_TEMPLATE.format(topic=clean_topic)
 
         raw_response = self.client.generate_text(

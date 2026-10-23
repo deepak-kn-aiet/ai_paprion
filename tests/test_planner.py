@@ -14,14 +14,17 @@ from pydantic import ValidationError
 import config
 from agent.planner import (
     GeminiClient,
+    GroqClient,
     LLMConfigurationError,
     LLMProviderError,
+    LLMRateLimitError,
     LLMResponseError,
     MockLLMClient,
     QueryItem,
     QueryPlan,
     QueryPlanner,
     _clean_and_parse_json,
+    generate_deterministic_query_plan,
 )
 
 # ---------------------------------------------------------------------------
@@ -430,3 +433,161 @@ class TestGeminiClientAndProviderConfig:
         client = GeminiClient(api_key="mock_secret_key")
         with pytest.raises(LLMProviderError, match="Gemini API request failed"):
             client.generate_text("Prompt")
+
+
+# ---------------------------------------------------------------------------
+# GroqClient Tests (Mocked)
+# ---------------------------------------------------------------------------
+
+
+class TestGroqClient:
+    """Tests for the GroqClient LLM client implementation."""
+
+    def test_groq_missing_api_key_raises_config_error(self) -> None:
+        with pytest.raises(LLMConfigurationError, match="Groq API key is required"):
+            GroqClient(api_key=None)
+        with pytest.raises(LLMConfigurationError, match="Groq API key is required"):
+            GroqClient(api_key="")
+
+    @patch("groq.Groq")
+    def test_groq_client_init_and_generate_success(self, mock_groq_class: MagicMock) -> None:
+        mock_client = MagicMock()
+        mock_groq_class.return_value = mock_client
+
+        mock_choice = MagicMock()
+        mock_choice.message.content = json.dumps({
+            "queries": [
+                {"query": "groq survey foundations", "intent": "foundational"},
+                {"query": "groq architecture algorithms", "intent": "methodology"},
+                {"query": "groq benchmark evaluation", "intent": "benchmarks"},
+            ]
+        })
+        mock_response = MagicMock(choices=[mock_choice])
+        mock_client.chat.completions.create.return_value = mock_response
+
+        client = GroqClient(api_key="mock_groq_secret", model="llama-3.3-70b-versatile")
+        output = client.generate_text("Research Prompt", system_instruction="System Instruction")
+
+        assert "groq survey foundations" in output
+        mock_client.chat.completions.create.assert_called_once()
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs["model"] == "llama-3.3-70b-versatile"
+        assert call_kwargs["response_format"] == {"type": "json_object"}
+        assert len(call_kwargs["messages"]) == 2
+        assert call_kwargs["messages"][0]["role"] == "system"
+        assert call_kwargs["messages"][1]["role"] == "user"
+
+    @patch("groq.Groq")
+    def test_groq_client_rate_limit_error_handling(self, mock_groq_class: MagicMock) -> None:
+        mock_client = MagicMock()
+        mock_groq_class.return_value = mock_client
+
+        from groq import RateLimitError
+        rate_err = RateLimitError(
+            message="Rate limit reached: 30 RPM exceeded",
+            response=MagicMock(status_code=429),
+            body={"error": {"message": "Rate limit reached"}},
+        )
+        mock_client.chat.completions.create.side_effect = rate_err
+
+        client = GroqClient(api_key="mock_groq_secret")
+        with pytest.raises(LLMRateLimitError, match="quota or rate limit exceeded"):
+            client.generate_text("Prompt")
+
+    @patch("groq.Groq")
+    def test_groq_client_empty_response_raises(self, mock_groq_class: MagicMock) -> None:
+        mock_client = MagicMock()
+        mock_groq_class.return_value = mock_client
+
+        mock_choice = MagicMock()
+        mock_choice.message.content = "   "
+        mock_response = MagicMock(choices=[mock_choice])
+        mock_client.chat.completions.create.return_value = mock_response
+
+        client = GroqClient(api_key="mock_groq_secret")
+        with pytest.raises(LLMResponseError, match="empty response"):
+            client.generate_text("Prompt")
+
+    @patch("groq.Groq")
+    def test_groq_never_exposes_api_key_in_error_message(self, mock_groq_class: MagicMock) -> None:
+        secret_key = "super_secret_groq_api_token_xyz999"
+        mock_client = MagicMock()
+        mock_groq_class.return_value = mock_client
+        mock_client.chat.completions.create.side_effect = ConnectionError("Connection refused by host")
+
+        client = GroqClient(api_key=secret_key)
+        with pytest.raises(LLMProviderError) as exc_info:
+            client.generate_text("Prompt")
+
+        assert secret_key not in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Deterministic Planner Tests
+# ---------------------------------------------------------------------------
+
+
+class TestDeterministicPlanner:
+    """Tests for deterministic query planning without LLM calls."""
+
+    def test_deterministic_planner_generates_valid_query_plan(self) -> None:
+        plan = generate_deterministic_query_plan("Retrieval-Augmented Generation")
+        assert plan.topic == "Retrieval-Augmented Generation"
+        assert 3 <= len(plan.queries) <= 5
+
+        intents = [q.intent for q in plan.queries]
+        assert "foundational" in intents
+        assert "methodology" in intents
+        assert "benchmarks" in intents
+        assert "applications" in intents
+
+        # Queries must be distinct
+        unique_queries = {q.query.lower().strip() for q in plan.queries}
+        assert len(unique_queries) == len(plan.queries)
+
+    def test_deterministic_planner_empty_topic_raises(self) -> None:
+        with pytest.raises(ValueError, match="non-empty string"):
+            generate_deterministic_query_plan("")
+        with pytest.raises(ValueError, match="non-empty string"):
+            generate_deterministic_query_plan("   ")
+
+    def test_query_planner_deterministic_flag_makes_zero_llm_calls(self) -> None:
+        mock_client = MagicMock()
+        planner = QueryPlanner(client=mock_client, deterministic=True)
+        plan = planner.plan("Mechanistic Interpretability")
+
+        assert mock_client.generate_text.call_count == 0
+        assert len(plan.queries) == 4
+        assert "mechanistic interpretability" in plan.queries[0].query.lower()
+
+
+# ---------------------------------------------------------------------------
+# Provider Selection Tests
+# ---------------------------------------------------------------------------
+
+
+class TestProviderSelection:
+    """Tests provider selection between Gemini, Groq, and Mock."""
+
+    @patch("groq.Groq")
+    def test_planner_selects_groq_provider(self, mock_groq_class: MagicMock) -> None:
+        planner = QueryPlanner(provider="groq", api_key="test_key", deterministic=False)
+        assert isinstance(planner.client, GroqClient)
+        assert planner.client.model == config.GROQ_MODEL
+
+    @patch("google.genai.Client")
+    def test_planner_selects_gemini_provider(self, mock_genai_class: MagicMock) -> None:
+        planner = QueryPlanner(provider="gemini", api_key="test_key", deterministic=False)
+        assert isinstance(planner.client, GeminiClient)
+
+    def test_planner_missing_groq_key_raises_config_error(self) -> None:
+        with (
+            patch.object(config, "GROQ_API_KEY", None),
+            pytest.raises(LLMConfigurationError, match="Groq API key is required"),
+        ):
+            QueryPlanner(provider="groq", api_key=None)
+
+    def test_planner_unsupported_provider_raises(self) -> None:
+        with pytest.raises(LLMConfigurationError, match="Unsupported LLM provider"):
+            QueryPlanner(provider="unsupported_provider")
+

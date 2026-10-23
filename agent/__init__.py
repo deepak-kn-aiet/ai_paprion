@@ -15,15 +15,18 @@ from agent.overview import (
 )
 from agent.planner import (
     GeminiClient,
+    GroqClient,
     LLMClient,
     LLMConfigurationError,
     LLMProviderError,
+    LLMRateLimitError,
     LLMResponseError,
     MockLLMClient,
     QueryItem,
     QueryPlan,
     QueryPlanner,
     QueryPlannerError,
+    generate_deterministic_query_plan,
 )
 from agent.scoring import (
     DEFAULT_VENUE_SCORES,
@@ -36,9 +39,11 @@ __all__ = [
     "DEFAULT_VENUE_SCORES",
     "DEFAULT_WEIGHTS",
     "GeminiClient",
+    "GroqClient",
     "LLMClient",
     "LLMConfigurationError",
     "LLMProviderError",
+    "LLMRateLimitError",
     "LLMResponseError",
     "MockLLMClient",
     "OverviewEngine",
@@ -54,6 +59,7 @@ __all__ = [
     "ResearchTheme",
     "ResearchVerdict",
     "RetrievalDiagnostic",
+    "generate_deterministic_query_plan",
     "normalize_review_score",
     "score_papers",
 ]

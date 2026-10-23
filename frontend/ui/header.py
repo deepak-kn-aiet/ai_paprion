@@ -40,20 +40,24 @@ def render_hero() -> None:
 
 def render_report_header(topic: str, result: ResearchAgentResult) -> None:
     """Render executive research synthesis report header."""
+    import config
+
     st.markdown('<div id="report-header-section"></div>', unsafe_allow_html=True)
     clean_topic = topic.strip() if topic else "Academic Research Topic"
+    status_badge = "Cached Result" if getattr(result, "is_cached", False) else "Pipeline Complete"
+    provider_label = "Groq" if config.LLM_PROVIDER == "groq" else "Gemini"
     st.markdown(
         f"""
         <div class="report-header-card">
             <div class="report-eyebrow-tag">ACADEMIC RESEARCH REPORT</div>
             <div class="report-topic-title">{html.escape(clean_topic)}</div>
             <div class="report-meta-row">
-                <span class="report-badge-complete">Pipeline Complete</span>
+                <span class="report-badge-complete">{status_badge}</span>
                 <span class="report-meta-text">{result.total_deduplicated} verified papers synthesized</span>
                 <span class="report-meta-dot">·</span>
                 <span class="report-meta-text">{len(result.plan.queries)} queries executed</span>
                 <span class="report-meta-dot">·</span>
-                <span class="report-meta-text">OpenAlex retrieval & Gemini AI synthesis</span>
+                <span class="report-meta-text">OpenAlex retrieval & {provider_label} AI synthesis</span>
             </div>
         </div>
         """,

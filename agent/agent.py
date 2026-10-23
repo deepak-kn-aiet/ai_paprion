@@ -7,10 +7,18 @@ and evidence-grounded research synthesis into a unified research report.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 
 from pydantic import BaseModel, Field, field_validator
 
+import config
+from agent.cache import (
+    cache_research_result,
+    get_cached_research_result,
+    make_research_cache_key,
+)
 from agent.overview import OverviewEngine, ResearchOverview
 from agent.planner import QueryPlan, QueryPlanner
 from agent.scoring import score_papers
@@ -65,6 +73,11 @@ class RetrievalDiagnostic(BaseModel):
     )
     paper_count: int = Field(default=0, ge=0, description="Raw papers retrieved by this query.")
     error_message: str | None = Field(default=None, description="Error detail if retrieval raised an exception.")
+    duration_seconds: float = Field(
+        default=0.0,
+        ge=0.0,
+        description="Execution duration of this retrieval query in seconds.",
+    )
 
 
 class ResearchAgentResult(BaseModel):
@@ -92,6 +105,14 @@ class ResearchAgentResult(BaseModel):
         default_factory=list,
         description="Per-query retrieval execution status and diagnostics.",
     )
+    is_cached: bool = Field(
+        default=False,
+        description="Whether this research result was retrieved from cache.",
+    )
+    timings: dict[str, float] = Field(
+        default_factory=dict,
+        description="Fine-grained execution phase timings in seconds.",
+    )
 
     @field_validator("topic")
     @classmethod
@@ -113,17 +134,27 @@ class ResearchAgent:
         provider: str | None = None,
         api_key: str | None = None,
         model: str | None = None,
+        use_deterministic_planner: bool | None = None,
     ) -> None:
         self.search_fn = search_fn or _default_search
+        self.provider = (provider or config.LLM_PROVIDER).strip().lower()
+        self.model = model or (config.GROQ_MODEL if self.provider == "groq" else config.LLM_MODEL)
+        self.api_key = api_key
+        self.use_deterministic_planner = (
+            use_deterministic_planner
+            if use_deterministic_planner is not None
+            else config.USE_DETERMINISTIC_PLANNER
+        )
 
         # Configure or inject QueryPlanner
         if planner is not None:
             self.planner = planner
         else:
             self.planner = QueryPlanner(
-                provider=provider,
-                api_key=api_key,
-                model=model,
+                provider=self.provider,
+                api_key=self.api_key,
+                model=self.model,
+                deterministic=self.use_deterministic_planner,
             )
 
         # Configure or inject OverviewEngine
@@ -131,16 +162,16 @@ class ResearchAgent:
             self.overview_engine = overview_engine
         else:
             self.overview_engine = OverviewEngine(
-                provider=provider,
-                api_key=api_key,
-                model=model,
+                provider=self.provider,
+                api_key=self.api_key,
+                model=self.model,
             )
 
     def run(
         self,
         topic: str,
         per_query_limit: int = 10,
-        max_overview_papers: int | None = 20,
+        max_overview_papers: int | None = None,
         weights: dict[str, float] | None = None,
         threshold: float = 0.70,
         enrich_access: bool = False,
@@ -154,9 +185,9 @@ class ResearchAgent:
             The user-supplied research topic, query, or question. Must be a non-empty string.
         per_query_limit : int, default 10
             Maximum number of papers to retrieve per individual planned query.
-        max_overview_papers : int | None, default 20
+        max_overview_papers : int | None, default None
             Maximum top-scored papers to supply as candidate evidence to OverviewEngine.
-            Pass None to supply all scored papers.
+            If None, uses config.SYNTHESIS_MAX_PAPERS.
         weights : dict[str, float] | None
             Custom scoring weights for score_papers.
         threshold : float, default 0.70
@@ -164,7 +195,7 @@ class ResearchAgent:
         enrich_access : bool, default False
             Whether retrieval should enrich results with Unpaywall open-access metadata.
         use_cache : bool, default True
-            Whether retrieval should check local query cache.
+            Whether retrieval and agent research results should check local cache.
 
         Returns
         -------
@@ -182,20 +213,42 @@ class ResearchAgent:
         if not isinstance(topic, str) or not topic.strip():
             raise ValueError("Topic must be a non-empty string.")
 
+        e2e_t0 = time.perf_counter()
+        timings: dict[str, float] = {}
         clean_topic = topic.strip()
 
+        # Step 0: Check research cache if enabled
+        t_cache_0 = time.perf_counter()
+        cache_key = make_research_cache_key(
+            topic=clean_topic,
+            provider=self.provider,
+            model=self.model,
+            deterministic=bool(self.use_deterministic_planner),
+        )
+        if use_cache:
+            cached_result = get_cached_research_result(cache_key)
+            if cached_result is not None:
+                cached_result.timings["cache_lookup"] = round(time.perf_counter() - t_cache_0, 4)
+                cached_result.timings["total_duration"] = round(time.perf_counter() - e2e_t0, 4)
+                logger.info("Returning cached research result for topic '%s'", clean_topic)
+                return cached_result
+        timings["cache_lookup"] = round(time.perf_counter() - t_cache_0, 4)
+
         # Step 1: Query Planning
+        t_plan_0 = time.perf_counter()
         try:
             plan = self.planner.plan(clean_topic)
         except Exception as exc:
             raise ResearchAgentError(f"Query planning failed for topic '{clean_topic}': {exc}") from exc
+        timings["query_planning"] = round(time.perf_counter() - t_plan_0, 4)
 
-        # Step 2: Multi-Query Retrieval
+        # Step 2: Multi-Query Retrieval (Parallelized via bounded ThreadPoolExecutor)
+        t_ret_0 = time.perf_counter()
         raw_papers: list[Paper] = []
         diagnostics: list[RetrievalDiagnostic] = []
 
-        for item in plan.queries:
-            q_str = item.query
+        def _fetch_query(q_str: str) -> tuple[str, list[Paper], float, str | None]:
+            q_t0 = time.perf_counter()
             try:
                 q_papers = self.search_fn(
                     query=q_str,
@@ -203,35 +256,36 @@ class ResearchAgent:
                     enrich_access=enrich_access,
                     use_cache=use_cache,
                 )
-                if not isinstance(q_papers, list):
-                    q_papers = []
+                dur = round(time.perf_counter() - q_t0, 4)
+                return q_str, q_papers if isinstance(q_papers, list) else [], dur, None
+            except Exception as exc:  # noqa: BLE001 - resilience to arbitrary provider or network failure
+                dur = round(time.perf_counter() - q_t0, 4)
+                logger.warning("Retrieval call failed for query '%s': %s", q_str, exc)
+                return q_str, [], dur, str(exc)
 
+        worker_count = min(4, len(plan.queries)) if plan.queries else 1
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            future_list = [executor.submit(_fetch_query, item.query) for item in plan.queries]
+            for fut in future_list:
+                q_str, q_papers, q_dur, q_err = fut.result()
                 p_count = len(q_papers)
                 raw_papers.extend(q_papers)
-                # Note: an empty result does not prove providers were healthy or unhealthy;
-                # it strictly records that 0 papers were returned for this query string.
-                status = "success" if p_count > 0 else "empty"
+                status = "failed" if q_err else ("success" if p_count > 0 else "empty")
                 diagnostics.append(
                     RetrievalDiagnostic(
                         query=q_str,
                         status=status,
                         paper_count=p_count,
-                    )
-                )
-            except Exception as exc:  # noqa: BLE001 - resilience to arbitrary provider or network failure
-                logger.warning("Retrieval call failed for query '%s': %s", q_str, exc)
-                diagnostics.append(
-                    RetrievalDiagnostic(
-                        query=q_str,
-                        status="failed",
-                        paper_count=0,
-                        error_message=str(exc),
+                        error_message=q_err,
+                        duration_seconds=q_dur,
                     )
                 )
 
+        timings["retrieval_total"] = round(time.perf_counter() - t_ret_0, 4)
         total_retrieved = len(raw_papers)
 
         # Step 3: Deduplication across all queries
+        t_score_0 = time.perf_counter()
         deduped_papers = _deduplicate_papers(raw_papers)
         total_deduped = len(deduped_papers)
 
@@ -244,11 +298,17 @@ class ResearchAgent:
             )
         except Exception as exc:
             raise ResearchAgentError(f"Paper scoring failed for topic '{clean_topic}': {exc}") from exc
+        timings["dedup_and_scoring"] = round(time.perf_counter() - t_score_0, 4)
 
         # Step 5: Select candidate evidence subset for overview synthesis
+        limit_papers = (
+            max_overview_papers
+            if max_overview_papers is not None
+            else config.SYNTHESIS_MAX_PAPERS
+        )
         candidate_papers = (
-            ranked_papers[:max_overview_papers]
-            if max_overview_papers is not None and max_overview_papers > 0
+            ranked_papers[:limit_papers]
+            if limit_papers is not None and limit_papers > 0
             else ranked_papers
         )
 
@@ -261,8 +321,27 @@ class ResearchAgent:
         except Exception as exc:
             raise ResearchAgentError(f"Overview synthesis failed for topic '{clean_topic}': {exc}") from exc
 
-        # Step 7: Return structured result
-        return ResearchAgentResult(
+        timings["evidence_packet_construction"] = overview.timings.get("evidence_packet_construction", 0.0)
+        timings["llm_synthesis"] = overview.timings.get("llm_synthesis", 0.0)
+        timings["citation_validation"] = overview.timings.get("citation_validation", 0.0)
+        timings["total_duration"] = round(time.perf_counter() - e2e_t0, 4)
+
+        logger.info(
+            "Research pipeline completed for topic '%s' in %.3fs "
+            "(planning: %.3fs, retrieval: %.3fs, scoring: %.3fs, "
+            "evidence_packet: %.3fs, synthesis: %.3fs, citation_validation: %.3fs)",
+            clean_topic,
+            timings["total_duration"],
+            timings["query_planning"],
+            timings["retrieval_total"],
+            timings["dedup_and_scoring"],
+            timings["evidence_packet_construction"],
+            timings["llm_synthesis"],
+            timings["citation_validation"],
+        )
+
+        # Step 7: Return structured result and cache if valid
+        result = ResearchAgentResult(
             topic=clean_topic,
             plan=plan,
             total_retrieved=total_retrieved,
@@ -270,4 +349,11 @@ class ResearchAgent:
             ranked_papers=ranked_papers,
             overview=overview,
             diagnostics=diagnostics,
+            is_cached=False,
+            timings=timings,
         )
+
+        if use_cache and result.ranked_papers:
+            cache_research_result(cache_key, result)
+
+        return result

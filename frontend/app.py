@@ -36,6 +36,7 @@ from agent.agent import (
 from agent.planner import (
     LLMConfigurationError,
     LLMProviderError,
+    LLMRateLimitError,
     LLMResponseError,
 )
 from data.search import search
@@ -293,11 +294,24 @@ def handle_research_submission(topic_input: str) -> None:
         status_placeholder.empty()
         st.rerun()
 
-    except LLMConfigurationError:
+    except LLMConfigurationError as cfg_error:
+        status_placeholder.empty()
+        err_msg = str(cfg_error)
+        if "GROQ_API_KEY" in err_msg or "groq" in err_msg.lower():
+            st.error(
+                f"Configuration error: {err_msg}. "
+                "Verify that GROQ_API_KEY is configured correctly in your local .env file."
+            )
+        else:
+            st.error(
+                "Configuration error: GEMINI_API_KEY is not configured or is invalid. "
+                "Verify that GEMINI_API_KEY is configured correctly in your local .env file."
+            )
+
+    except LLMRateLimitError as rate_error:
         status_placeholder.empty()
         st.error(
-            "Configuration error: GEMINI_API_KEY is not configured or is invalid. "
-            "Verify that GEMINI_API_KEY is configured correctly in your local .env file."
+            f"Rate limit exceeded: {rate_error}"
         )
 
     except (LLMProviderError, LLMResponseError) as llm_error:
@@ -312,9 +326,20 @@ def handle_research_submission(topic_input: str) -> None:
         root_cause = agent_error.__cause__ or agent_error
 
         if isinstance(root_cause, LLMConfigurationError):
+            err_msg = str(root_cause)
+            if "GROQ_API_KEY" in err_msg or "groq" in err_msg.lower():
+                st.error(
+                    f"Configuration error: {err_msg}. "
+                    "Verify that GROQ_API_KEY is configured correctly in your local .env file."
+                )
+            else:
+                st.error(
+                    "Configuration error: GEMINI_API_KEY is not configured or is invalid. "
+                    "Verify GEMINI_API_KEY in your local .env file."
+                )
+        elif isinstance(root_cause, LLMRateLimitError):
             st.error(
-                "Configuration error: GEMINI_API_KEY is not configured or is invalid. "
-                "Verify GEMINI_API_KEY in your local .env file."
+                f"Rate limit exceeded: {root_cause}"
             )
         elif isinstance(root_cause, (LLMProviderError, LLMResponseError)):
             st.error(

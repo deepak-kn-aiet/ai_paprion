@@ -7,3 +7,4 @@ uvicorn==0.54.0
 httpx==0.28.1
 google-genai==1.60.0
 streamlit>=1.30.0
+groq>=1.0.0

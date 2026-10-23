@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -31,6 +32,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 import config
 from agent.planner import (
     GeminiClient,
+    GroqClient,
     LLMClient,
     LLMConfigurationError,
     LLMResponseError,
@@ -134,6 +136,10 @@ class ResearchOverview(BaseModel):
     synthesis: str = Field(
         ...,
         description="Multi-paragraph cohesive narrative overview citing papers by paper_id.",
+    )
+    timings: dict[str, float] = Field(
+        default_factory=dict,
+        description="Fine-grained phase timings in seconds for evidence packet, synthesis, and validation.",
     )
 
     @field_validator("topic")
@@ -285,15 +291,29 @@ class OverviewMockClient(LLMClient):
 # ---------------------------------------------------------------------------
 
 
-def _format_evidence_packet(papers: list[Paper]) -> str:
-    """Format candidate papers into a structured, evidence-grounded packet for the LLM."""
+def _format_evidence_packet(
+    papers: list[Paper],
+    max_abstract_chars: int | None = None,
+) -> str:
+    """Format candidate papers into a structured, evidence-grounded packet for the LLM.
+
+    Applies a sensible context limit to prevent token exhaustion while retaining sufficient evidence.
+    """
+    limit = (
+        max_abstract_chars
+        if max_abstract_chars is not None
+        else config.SYNTHESIS_MAX_ABSTRACT_CHARS
+    )
     packets: list[str] = []
     for idx, paper in enumerate(papers, 1):
-        abstract_text = (
-            paper.abstract.strip()
-            if (paper.abstract is not None and paper.abstract.strip())
-            else "[Abstract not available; metadata only]"
-        )
+        if paper.abstract is not None and paper.abstract.strip():
+            raw_abstract = paper.abstract.strip()
+            if limit > 0 and len(raw_abstract) > limit:
+                abstract_text = raw_abstract[:limit].rstrip() + "... [truncated]"
+            else:
+                abstract_text = raw_abstract
+        else:
+            abstract_text = "[Abstract not available; metadata only]"
 
         authors_str = ", ".join(paper.authors) if paper.authors else "Unknown"
         venue_str = paper.venue if paper.venue else "Unknown"
@@ -513,10 +533,14 @@ class OverviewEngine:
             resolved_key = api_key or config.GEMINI_API_KEY
             resolved_model = model or config.LLM_MODEL
             self.client = GeminiClient(api_key=resolved_key, model=resolved_model)
+        elif resolved_provider == "groq":
+            resolved_key = api_key or config.GROQ_API_KEY
+            resolved_model = model or config.GROQ_MODEL
+            self.client = GroqClient(api_key=resolved_key, model=resolved_model)
         else:
             raise LLMConfigurationError(
                 f"Unsupported LLM provider: '{resolved_provider}'. "
-                "Supported providers are 'gemini' and 'mock'."
+                "Supported providers are 'gemini', 'groq', and 'mock'."
             )
 
     def generate_overview(self, papers: list[Paper], topic: str) -> ResearchOverview:
@@ -550,6 +574,15 @@ class OverviewEngine:
             raise TypeError("Papers must be a list.")
 
         clean_topic = topic.strip()
+
+        # Deduplicate candidate papers by paper_id to avoid redundant evidence context
+        seen_pids: set[str] = set()
+        deduped_papers: list[Paper] = []
+        for p in papers:
+            if p.paper_id not in seen_pids:
+                seen_pids.add(p.paper_id)
+                deduped_papers.append(p)
+        papers = deduped_papers
         total_papers = len(papers)
 
         # -------------------------------------------------------------------
@@ -615,9 +648,12 @@ class OverviewEngine:
                 ),
             )
 
+        timings: dict[str, float] = {}
+
         # -------------------------------------------------------------------
         # Live / Mock LLM Synthesis
         # -------------------------------------------------------------------
+        t_packet_0 = time.perf_counter()
         evidence_packet = _format_evidence_packet(papers)
         user_prompt = OVERVIEW_USER_PROMPT_TEMPLATE.format(
             topic=clean_topic,
@@ -625,12 +661,16 @@ class OverviewEngine:
             abstract_count=papers_with_abstracts,
             evidence_packet=evidence_packet,
         )
+        timings["evidence_packet_construction"] = round(time.perf_counter() - t_packet_0, 4)
 
+        t_llm_0 = time.perf_counter()
         raw_response = self.client.generate_text(
             prompt=user_prompt,
             system_instruction=OVERVIEW_SYSTEM_PROMPT,
         )
+        timings["llm_synthesis"] = round(time.perf_counter() - t_llm_0, 4)
 
+        t_val_0 = time.perf_counter()
         parsed_json = _clean_and_parse_json(raw_response)
         if not isinstance(parsed_json, dict):
             raise LLMResponseError("JSON response structure must be an object containing 'themes' and 'verdict'.")
@@ -761,6 +801,8 @@ class OverviewEngine:
         verdict_dict["confidence_rationale"] = calibrated_rationale
         verdict_dict["top_recommended_papers"] = canonical_top_recs
 
+        timings["citation_validation"] = round(time.perf_counter() - t_val_0, 4)
+
         try:
             verdict_obj = ResearchVerdict(**verdict_dict)
             return ResearchOverview(
@@ -770,6 +812,7 @@ class OverviewEngine:
                 themes=theme_items,
                 verdict=verdict_obj,
                 synthesis=raw_synthesis.strip(),
+                timings=timings,
             )
         except Exception as err:
             raise LLMResponseError(f"Validation failed for ResearchOverview: {err}") from err

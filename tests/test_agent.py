@@ -5,6 +5,7 @@ All tests are isolated, deterministic, and mocked — no live network requests o
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,7 +18,9 @@ from agent.agent import (
 )
 from agent.overview import OverviewEngine
 from agent.planner import (
+    LLMConfigurationError,
     LLMProviderError,
+    LLMRateLimitError,
     LLMResponseError,
     QueryItem,
     QueryPlan,
@@ -26,8 +29,17 @@ from agent.planner import (
 from shared.models import Paper
 
 # ---------------------------------------------------------------------------
-# Test Helpers
+# Test Helpers & Fixtures
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def isolate_agent_cache(tmp_path: Path):
+    """Ensure each test runs with an isolated temporary cache database."""
+    test_db = tmp_path / "agent_cache.db"
+    with patch("agent.cache.DEFAULT_AGENT_DB_PATH", test_db):
+        yield
+
 
 
 def _make_paper(
@@ -390,3 +402,217 @@ class TestAgentConfigurationAndMockMode:
         assert mock_search.call_count == 3
         mock_overview.generate_overview.assert_called_once()
         assert result.total_retrieved == 0
+
+
+# ---------------------------------------------------------------------------
+# Groq Integration & Provider Tests
+# ---------------------------------------------------------------------------
+
+
+class TestAgentGroqProvider:
+    """Tests for ResearchAgent when configured with provider='groq'."""
+
+    def test_agent_missing_groq_key_raises_config_error(self) -> None:
+        with (
+            patch.object(config, "GROQ_API_KEY", None),
+            pytest.raises(LLMConfigurationError, match="Groq API key is required"),
+        ):
+            ResearchAgent(provider="groq", api_key=None)
+
+    @patch("groq.Groq")
+    def test_agent_orchestration_with_groq_mocked(self, mock_groq_cls: MagicMock) -> None:
+        mock_client = MagicMock()
+        mock_groq_cls.return_value = mock_client
+
+        # Mock query planner response
+        planner_choice = MagicMock()
+        planner_choice.message.content = '{"queries": [{"query": "groq query 1", "intent": "foundational"}, {"query": "groq query 2", "intent": "methodology"}, {"query": "groq query 3", "intent": "benchmarks"}]}'
+
+        # Mock overview engine response
+        overview_choice = MagicMock()
+        overview_choice.message.content = '{"themes": [{"name": "Theme 1", "summary": "Summary citing [doi:10.1000/1]", "paper_ids": ["doi:10.1000/1"]}], "verdict": {"verdict_statement": "Verdict statement", "confidence": "high", "confidence_rationale": "High confidence", "key_findings": ["Finding citing [doi:10.1000/1]"], "limitations_and_gaps": ["No limitations"], "top_recommended_papers": ["doi:10.1000/1"]}, "synthesis": "Synthesis citing [doi:10.1000/1]."}'
+
+        mock_client.chat.completions.create.side_effect = [
+            MagicMock(choices=[planner_choice]),
+            MagicMock(choices=[overview_choice]),
+        ]
+
+        paper = _make_paper("doi:10.1000/1", "Groq Evaluated Paper")
+        mock_search = MagicMock(return_value=[paper])
+
+        agent = ResearchAgent(
+            provider="groq",
+            api_key="mock_groq_key",
+            search_fn=mock_search,
+            use_deterministic_planner=False,
+        )
+        result = agent.run(topic="Groq Literature Search", use_cache=False)
+
+        assert result.topic == "Groq Literature Search"
+        assert len(result.ranked_papers) == 1
+        assert result.ranked_papers[0].paper_id == "doi:10.1000/1"
+        assert mock_client.chat.completions.create.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Deterministic Planning & Call Reduction Tests
+# ---------------------------------------------------------------------------
+
+
+class TestAgentDeterministicPlanning:
+    """Tests deterministic query planning and LLM call reduction."""
+
+    def test_deterministic_planner_bypasses_planner_llm_call(self) -> None:
+        mock_overview = MagicMock()
+        mock_overview.generate_overview.return_value = OverviewEngine(
+            provider="mock"
+        ).generate_overview([], topic="Deterministic Search")
+
+        paper = _make_paper("doi:10.1000/det", "Deterministic Paper")
+        mock_search = MagicMock(return_value=[paper])
+
+        agent = ResearchAgent(
+            use_deterministic_planner=True,
+            overview_engine=mock_overview,
+            search_fn=mock_search,
+        )
+
+        result = agent.run(topic="Deterministic Search", use_cache=False)
+
+        # Plan generated 4 diverse queries deterministically
+        assert len(result.plan.queries) == 4
+        # Multi-query search was executed for all 4 queries
+        assert mock_search.call_count == 4
+        # Overview was generated exactly once
+        mock_overview.generate_overview.assert_called_once()
+        assert len(result.ranked_papers) == 1
+
+
+# ---------------------------------------------------------------------------
+# Result Caching & Rate Limit Handling Tests
+# ---------------------------------------------------------------------------
+
+
+class TestAgentCachingAndRateLimits:
+    """Tests research result caching and rate-limit error propagation."""
+
+    def test_agent_result_caching_lifecycle(self, tmp_path) -> None:
+        db_path = tmp_path / "test_research_cache.db"
+        with patch("agent.cache.DEFAULT_AGENT_DB_PATH", db_path):
+            paper = _make_paper("doi:10.1000/c1", "Cached Paper")
+            mock_search = MagicMock(return_value=[paper])
+
+            agent = ResearchAgent(provider="mock", search_fn=mock_search)
+
+            # First run: performs fresh search and caches result
+            res1 = agent.run("Cached Exploration", use_cache=True)
+            assert res1.is_cached is False
+            assert mock_search.call_count > 0
+
+            # Reset search mock call count
+            mock_search.reset_mock()
+
+            # Second run: retrieved from cache
+            res2 = agent.run("Cached Exploration", use_cache=True)
+            assert res2.is_cached is True
+            assert res2.topic == "Cached Exploration"
+            assert len(res2.ranked_papers) == 1
+            # Search was bypassed completely because result came from cache
+            assert mock_search.call_count == 0
+
+    def test_agent_propagates_rate_limit_error(self) -> None:
+        mock_planner = MagicMock()
+        mock_planner.plan.side_effect = LLMRateLimitError("Quota limit reached: 30 RPM")
+
+        agent = ResearchAgent(planner=mock_planner, provider="mock")
+        with pytest.raises(ResearchAgentError) as exc_info:
+            agent.run("Rate Limit Test", use_cache=False)
+
+        root = exc_info.value.__cause__
+        assert isinstance(root, LLMRateLimitError)
+        assert "Quota limit reached" in str(root)
+
+
+class TestAgentTimingAndConcurrency:
+    """Tests timing instrumentation, parallel multi-query retrieval, and error resilience."""
+
+    def test_agent_records_fine_grained_timings(self) -> None:
+        paper = _make_paper("doi:10.1000/t1", "Timing Paper")
+        mock_search = MagicMock(return_value=[paper])
+
+        agent = ResearchAgent(provider="mock", search_fn=mock_search)
+        result = agent.run("Timing Test Topic", use_cache=False)
+
+        assert isinstance(result.timings, dict)
+        expected_keys = {
+            "cache_lookup",
+            "query_planning",
+            "retrieval_total",
+            "dedup_and_scoring",
+            "evidence_packet_construction",
+            "llm_synthesis",
+            "citation_validation",
+            "total_duration",
+        }
+        for key in expected_keys:
+            assert key in result.timings, f"Missing timing key: {key}"
+            assert isinstance(result.timings[key], float)
+            assert result.timings[key] >= 0.0
+
+        for diag in result.diagnostics:
+            assert diag.duration_seconds >= 0.0
+
+    def test_parallel_multi_query_retrieval(self) -> None:
+        import time
+
+        def _slow_search(query: str, **kwargs) -> list[Paper]:
+            time.sleep(0.04)
+            return [_make_paper(f"doi:10.1000/{abs(hash(query))}", f"Paper for {query}")]
+
+        agent = ResearchAgent(
+            provider="mock",
+            search_fn=_slow_search,
+            use_deterministic_planner=True,
+        )
+
+        t0 = time.perf_counter()
+        result = agent.run("Parallel Retrieval Benchmark", use_cache=False)
+        duration = time.perf_counter() - t0
+
+        # With 4 queries sleeping 0.04s each, sequential would take >= 0.16s.
+        # Parallel bounded pool runs all 4 concurrently in ~0.04-0.12s.
+        assert duration < 0.15
+        assert len(result.plan.queries) == 4
+        assert result.timings["retrieval_total"] < 0.14
+        assert len(result.diagnostics) == 4
+        for diag in result.diagnostics:
+            assert diag.status == "success"
+
+    def test_partial_retrieval_failure_handling(self) -> None:
+        paper = _make_paper("doi:10.1000/ok", "Good Paper")
+
+        def _flaky_search(query: str, **kwargs) -> list[Paper]:
+            if "neural architecture" in query or "methodology" in query:
+                raise ConnectionError("Provider network timeout")
+            return [paper]
+
+        agent = ResearchAgent(
+            provider="mock",
+            search_fn=_flaky_search,
+            use_deterministic_planner=True,
+        )
+
+        result = agent.run("Resilience Topic", use_cache=False)
+
+        assert len(result.diagnostics) == 4
+        failed_diags = [d for d in result.diagnostics if d.status == "failed"]
+        success_diags = [d for d in result.diagnostics if d.status == "success"]
+
+        assert len(failed_diags) == 1
+        assert "Provider network timeout" in str(failed_diags[0].error_message)
+        assert len(success_diags) == 3
+        # Agent successfully produced ranked papers and synthesis from surviving queries
+        assert len(result.ranked_papers) > 0
+        assert result.overview.verdict is not None
+
+
