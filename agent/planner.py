@@ -17,11 +17,16 @@ import contextlib
 import json
 import re
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import config
+
+if TYPE_CHECKING:
+    from groq import Groq
+    from groq.types.chat import ChatCompletionMessageParam
+    from groq.types.chat.completion_create_params import ResponseFormat
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -277,6 +282,8 @@ class GeminiClient(LLMClient):
 class GroqClient(LLMClient):
     """Client for Groq models using the official groq SDK."""
 
+    _client: Groq
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -298,17 +305,18 @@ class GroqClient(LLMClient):
             raise LLMConfigurationError(f"Failed to initialize Groq client: {err}") from err
 
     def generate_text(self, prompt: str, system_instruction: str | None = None) -> str:
-        messages: list[dict[str, str]] = []
+        messages: list[ChatCompletionMessageParam] = []
         if system_instruction:
             messages.append({"role": "system", "content": system_instruction})
         messages.append({"role": "user", "content": prompt})
 
+        response_format: ResponseFormat = {"type": "json_object"}
         try:
             response = self._client.chat.completions.create(
                 model=self.model,
-                messages=messages,  # type: ignore[arg-type]
+                messages=messages,
                 temperature=0.2,
-                response_format={"type": "json_object"},
+                response_format=response_format,
                 max_tokens=4096,
             )
         except Exception as err:
@@ -430,7 +438,7 @@ class QueryPlanner:
     ) -> None:
         if client is not None:
             self.client = client
-            self.deterministic = bool(deterministic) if deterministic is not None else False
+            self.deterministic = deterministic if deterministic is not None else False
             return
 
         resolved_provider = (provider or config.LLM_PROVIDER).strip().lower()
