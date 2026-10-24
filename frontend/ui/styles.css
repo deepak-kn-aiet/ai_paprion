@@ -662,9 +662,11 @@ h1,
     height: 48px !important;
     box-sizing: border-box !important;
 
-    background: var(--surface-white) !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
     border: 1px solid var(--border-subtle) !important;
     border-radius: 10px !important;
+    color-scheme: light !important;
 
     box-shadow: var(--shadow-sm) !important;
     transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
@@ -673,24 +675,95 @@ h1,
 [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
     border-color: var(--violet-primary) !important;
     box-shadow: var(--focus-ring) !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
 }
 
 [data-testid="stTextInput"] input {
     height: 46px !important;
     padding: 0 1rem !important;
 
-    color: var(--text-primary) !important;
-    background: transparent !important;
+    /* Explicit high-contrast dark text on light background across all browsers and iOS WebKit */
+    color: #1E1B2E !important;
+    -webkit-text-fill-color: #1E1B2E !important;
+    caret-color: var(--violet-primary) !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
     border: none !important;
+    outline: none !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    color-scheme: light !important;
+    -webkit-appearance: none !important;
 
     font-family: var(--font-sans) !important;
     font-size: 0.94rem !important;
+    font-weight: 500 !important;
     line-height: normal !important;
 }
 
+[data-testid="stTextInput"] input:focus {
+    color: #1E1B2E !important;
+    -webkit-text-fill-color: #1E1B2E !important;
+    caret-color: var(--violet-primary) !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    outline: none !important;
+}
+
+/* Clearly distinguishable placeholder with appropriate contrast (WCAG AA) */
 [data-testid="stTextInput"] input::placeholder {
-    color: var(--text-muted) !important;
+    color: #6E6D7A !important;
+    -webkit-text-fill-color: #6E6D7A !important;
     opacity: 1 !important;
+    font-weight: 400 !important;
+}
+
+[data-testid="stTextInput"] input::-webkit-input-placeholder {
+    color: #6E6D7A !important;
+    -webkit-text-fill-color: #6E6D7A !important;
+    opacity: 1 !important;
+    font-weight: 400 !important;
+}
+
+[data-testid="stTextInput"] input::-moz-placeholder {
+    color: #6E6D7A !important;
+    opacity: 1 !important;
+    font-weight: 400 !important;
+}
+
+[data-testid="stTextInput"] input:-ms-input-placeholder {
+    color: #6E6D7A !important;
+    opacity: 1 !important;
+    font-weight: 400 !important;
+}
+
+/* iOS Safari WebKit Autofill and selection override */
+[data-testid="stTextInput"] input:-webkit-autofill,
+[data-testid="stTextInput"] input:-webkit-autofill:hover,
+[data-testid="stTextInput"] input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #1E1B2E !important;
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+    box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+    caret-color: var(--violet-primary) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+}
+
+[data-testid="stTextInput"] input::selection {
+    background-color: rgba(117, 98, 217, 0.25) !important;
+    color: #1E1B2E !important;
+    -webkit-text-fill-color: #1E1B2E !important;
+}
+
+/* Selectbox controls readability safeguard */
+[data-testid="stSelectbox"] div[data-baseweb="select"] {
+    color: #1E1B2E !important;
+    color-scheme: light !important;
+}
+
+[data-testid="stSelectbox"] div[data-baseweb="select"] * {
+    color: #1E1B2E !important;
+    -webkit-text-fill-color: #1E1B2E !important;
 }
 
 /* Suggestion Chips */
@@ -1976,37 +2049,156 @@ h1,
 }
 
 @media (max-width: 768px) {
-    [data-testid="stAppViewContainer"] .block-container,
-    [data-testid="stMain"] .block-container {
-        padding: 1.15rem 1rem 2rem !important;
+    /* Prevent page-level horizontal overflow */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
     }
 
-    /* Stack search inputs smoothly on mobile */
+    /* Streamlit header bar on tablets */
+    [data-testid="stHeader"] {
+        height: 2.75rem !important;
+        padding: 0 0.75rem !important;
+        background: rgba(245, 244, 249, 0.94) !important;
+    }
+
+    [data-testid="collapsedControl"] {
+        top: 0.35rem !important;
+        left: 0.65rem !important;
+        z-index: 99999 !important;
+    }
+
+    [data-testid="collapsedControl"] button {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+    }
+
+    [data-testid="stToolbar"] {
+        right: 0.75rem !important;
+        top: 0.35rem !important;
+    }
+
+    /* Mobile sidebar constraint */
+    [data-testid="stSidebar"] {
+        max-width: 86vw !important;
+    }
+
+    /* Workspace main content container shell */
+    [data-testid="stAppViewContainer"] .block-container,
+    [data-testid="stMain"] .block-container {
+        padding: 0.85rem 1rem 3.5rem !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Hero section */
+    .hero-wrapper {
+        padding: 0.15rem 0 0.85rem !important;
+    }
+
+    .hero-eyebrow {
+        font-size: 0.65rem !important;
+        margin-bottom: 0.25rem !important;
+        letter-spacing: 0.10em !important;
+    }
+
+    h1,
+    [data-testid="stHeadingWithActionElements"] h1,
+    [data-testid="stMarkdownContainer"] h1,
+    .hero-title {
+        font-size: clamp(1.75rem, 5vw, 2.25rem) !important;
+        line-height: 1.22 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.5rem !important;
+        word-break: break-word !important;
+    }
+
+    .hero-desc {
+        font-size: 0.90rem !important;
+        line-height: 1.55 !important;
+        margin: 0.2rem 0 0.5rem !important;
+    }
+
+    .editorial-divider {
+        margin: 0.35rem 0 0.65rem !important;
+        height: 2px !important;
+    }
+
+    .hero-shader-mount {
+        left: 0.35rem !important;
+        right: 0.35rem !important;
+        top: 0.35rem !important;
+        border-radius: 14px !important;
+        min-height: 160px !important;
+    }
+
+    /* Stack search inputs smoothly */
     [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) {
         flex-direction: column !important;
-        gap: 0.65rem !important;
+        gap: 0.55rem !important;
+        align-items: stretch !important;
+        margin-top: 0.5rem !important;
+        width: 100% !important;
     }
 
     [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) > div {
         width: 100% !important;
         min-width: 100% !important;
+        max-width: 100% !important;
     }
 
-    /* Wrap metric cards cleanly on tablet (2 columns per row) */
+    [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) .stButton,
+    [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) .stButton > button {
+        width: 100% !important;
+        min-height: 46px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Metric cards: 2 columns per row on tablet */
     [data-testid="stHorizontalBlock"]:has(.metric-card) {
+        display: flex !important;
+        flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 0.65rem !important;
+        width: 100% !important;
     }
 
-    [data-testid="stHorizontalBlock"]:has(.metric-card) > div {
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > div,
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > [data-testid="column"],
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > [data-testid="stColumn"] {
         flex: 1 1 calc(50% - 0.35rem) !important;
         min-width: calc(50% - 0.35rem) !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
-    /* Stack filter dropdowns vertically on tablet and mobile */
+    .metric-card {
+        min-height: auto !important;
+        height: auto !important;
+        padding: 0.85rem 1rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .metric-label {
+        font-size: 0.66rem !important;
+        letter-spacing: 0.06em !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .metric-value {
+        font-size: 1.35rem !important;
+        line-height: 1.25 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Stack filter dropdowns vertically on tablet */
     [data-testid="stHorizontalBlock"]:has([data-testid="stSelectbox"]) {
         flex-direction: column !important;
         gap: 0.5rem !important;
+        width: 100% !important;
     }
 
     [data-testid="stHorizontalBlock"]:has([data-testid="stSelectbox"]) > div {
@@ -2018,6 +2210,7 @@ h1,
     [data-testid="stHorizontalBlock"]:has(.topic-preset-card) {
         flex-direction: column !important;
         gap: 0.65rem !important;
+        width: 100% !important;
     }
 
     [data-testid="stHorizontalBlock"]:has(.topic-preset-card) > div {
@@ -2028,6 +2221,7 @@ h1,
     [data-testid="stHorizontalBlock"]:has(.theme-card) {
         flex-direction: column !important;
         gap: 0.65rem !important;
+        width: 100% !important;
     }
 
     [data-testid="stHorizontalBlock"]:has(.theme-card) > div {
@@ -2035,89 +2229,82 @@ h1,
         min-width: 100% !important;
     }
 
-    h1,
-    [data-testid="stHeadingWithActionElements"] h1,
-    [data-testid="stMarkdownContainer"] h1,
-    .hero-title {
-        font-size: 2.05rem !important;
-    }
-
-    .hero-desc {
-        font-size: 0.94rem;
-    }
-
     .report-header-card,
     .verdict-box,
     .synthesis-box,
     .paper-card {
-        padding: 1.1rem;
+        padding: 1.1rem !important;
+        margin-bottom: 1rem !important;
     }
 
     .report-topic-title {
-        font-size: 1.45rem;
+        font-size: 1.45rem !important;
     }
 
     .theme-card-title,
     .paper-card-title {
-        font-size: 1.1rem;
-    }
-
-    .metric-card {
-        min-height: 85px;
-        padding: 0.8rem;
-    }
-
-    .metric-value {
-        font-size: 1.25rem;
+        font-size: 1.1rem !important;
     }
 
     .paper-card-top {
-        flex-direction: column;
-        gap: 0.4rem;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
     }
 
     .verdict-header-row {
-        flex-wrap: wrap;
-        gap: 0.6rem;
+        flex-wrap: wrap !important;
+        gap: 0.6rem !important;
     }
 
-    /* Accessible touchscreen tap targets */
+    /* Touchscreen tap targets & chip wrapping */
+    .search-chips-container {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+        width: 100% !important;
+    }
+
+    .search-chips-list {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+    }
+
     .search-chip {
-        padding: 0.42rem 0.85rem;
-        font-size: 0.82rem;
-        min-height: 38px;
+        padding: 0.38rem 0.75rem !important;
+        font-size: 0.80rem !important;
+        min-height: 36px !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        box-sizing: border-box !important;
     }
 
     .recent-search {
-        padding: 0.65rem 0.85rem;
-        min-height: 42px;
+        padding: 0.65rem 0.85rem !important;
+        min-height: 42px !important;
     }
 
     .paper-action-link {
-        padding: 0.42rem 0.75rem;
-        font-size: 0.80rem;
-        min-height: 36px;
+        padding: 0.45rem 0.85rem !important;
+        font-size: 0.82rem !important;
+        min-height: 38px !important;
     }
 
     .academic-trust-strip {
-        grid-template-columns: 1fr;
-        gap: 0.85rem;
-        padding: 0.85rem 1rem;
+        grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
+        padding: 0.85rem 1rem !important;
     }
 
     .workflow-cue-strip {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-
-    .search-chips-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.4rem;
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
     }
 
     .workflow-card {
-        min-height: auto;
+        min-height: auto !important;
     }
 
     /* Word wrap safeguards for long titles, scientific formulas, and DOIs */
@@ -2125,15 +2312,22 @@ h1,
     .report-topic-title,
     .verdict-box-statement,
     .synthesis-paragraph,
+    .synthesis-box,
     .theme-card-title,
     .finding-content,
-    .gap-content {
-        word-break: break-word;
-        overflow-wrap: break-word;
+    .gap-content,
+    .topic-preset-title,
+    .topic-preset-desc,
+    .trust-text,
+    .metric-value,
+    .metric-label {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
     }
 
-    /* Prevent wide tables from causing whole-page horizontal scroll */
-    [data-testid="stMarkdownContainer"]:has(table) {
+    /* Prevent wide tables and code blocks from causing whole-page horizontal scroll */
+    [data-testid="stMarkdownContainer"]:has(table),
+    [data-testid="stMarkdownContainer"]:has(pre) {
         overflow-x: auto !important;
         max-width: 100% !important;
         -webkit-overflow-scrolling: touch;
@@ -2141,54 +2335,370 @@ h1,
 }
 
 @media (max-width: 480px) {
-    [data-testid="stAppViewContainer"] .block-container,
-    [data-testid="stMain"] .block-container {
-        padding: 0.85rem 0.85rem 1.75rem !important;
+    /* Compact header bar on mobile handsets */
+    [data-testid="stHeader"] {
+        height: 2.5rem !important;
+        padding: 0 0.45rem !important;
+        background: rgba(245, 244, 249, 0.96) !important;
     }
 
-    /* Metric cards full width on mobile handsets */
-    [data-testid="stHorizontalBlock"]:has(.metric-card) > div {
-        flex: 1 1 100% !important;
-        min-width: 100% !important;
-        width: 100% !important;
+    [data-testid="collapsedControl"] {
+        top: 0.25rem !important;
+        left: 0.45rem !important;
+        z-index: 99999 !important;
+    }
+
+    [data-testid="collapsedControl"] button {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+    }
+
+    [data-testid="stToolbar"] {
+        right: 0.45rem !important;
+        top: 0.25rem !important;
+    }
+
+    /* Main container shell: compact top and sides, generous bottom clearance for home bar / mobile chrome */
+    [data-testid="stAppViewContainer"] .block-container,
+    [data-testid="stMain"] .block-container {
+        padding: 0.5rem 0.75rem 4.5rem !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Hero section: tight, purposeful editorial spacing */
+    .hero-wrapper {
+        padding: 0.1rem 0 0.5rem !important;
+    }
+
+    .hero-eyebrow {
+        font-size: 0.60rem !important;
+        margin-bottom: 0.15rem !important;
+        letter-spacing: 0.08em !important;
     }
 
     h1,
     [data-testid="stHeadingWithActionElements"] h1,
     [data-testid="stMarkdownContainer"] h1,
     .hero-title {
-        font-size: 1.80rem !important;
+        font-size: clamp(1.45rem, 6.2vw, 1.75rem) !important;
+        line-height: 1.2 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.35rem !important;
+        letter-spacing: -0.01em !important;
     }
 
     .hero-desc {
-        font-size: 0.88rem;
+        font-size: 0.84rem !important;
+        line-height: 1.45 !important;
+        margin: 0.15rem 0 0.35rem !important;
     }
 
-    .verdict-box-statement {
-        font-size: 1.05rem;
+    .editorial-divider {
+        margin: 0.25rem 0 0.45rem !important;
+        height: 2px !important;
+        width: 38px !important;
     }
 
     .hero-shader-mount {
-        left: 0.25rem;
-        right: 0.25rem;
-        top: 0.5rem;
-        border-radius: 14px;
+        left: 0.2rem !important;
+        right: 0.2rem !important;
+        top: 0.25rem !important;
+        border-radius: 12px !important;
+        min-height: 140px !important;
+    }
+
+    /* Research search input & Run Research button */
+    [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) {
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+        margin-top: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has([data-testid="stTextInput"]) > div {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    [data-testid="stTextInput"] label {
+        margin-bottom: 0.25rem !important;
+    }
+
+    [data-testid="stTextInput"] label p {
+        font-size: 0.78rem !important;
+    }
+
+    [data-testid="stTextInput"] div[data-baseweb="base-input"],
+    [data-testid="stTextInput"] div[data-baseweb="input"] {
+        min-height: 44px !important;
+        height: 44px !important;
+        border-radius: 8px !important;
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        color-scheme: light !important;
+    }
+
+    [data-testid="stTextInput"] input {
+        height: 42px !important;
+        font-size: 0.88rem !important;
+        padding: 0 0.75rem !important;
+        color: #1E1B2E !important;
+        -webkit-text-fill-color: #1E1B2E !important;
+        caret-color: var(--violet-primary) !important;
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        color-scheme: light !important;
+    }
+
+    [data-testid="stTextInput"] input:focus {
+        color: #1E1B2E !important;
+        -webkit-text-fill-color: #1E1B2E !important;
+        caret-color: var(--violet-primary) !important;
+    }
+
+    [data-testid="stTextInput"] input::placeholder,
+    [data-testid="stTextInput"] input::-webkit-input-placeholder {
+        color: #6E6D7A !important;
+        -webkit-text-fill-color: #6E6D7A !important;
+        font-size: 0.84rem !important;
+    }
+
+    .stButton,
+    .stButton > button {
+        width: 100% !important;
+        min-height: 44px !important;
+        height: 44px !important;
+        font-size: 0.88rem !important;
+        padding: 0.55rem 1rem !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Suggestion chips wrapped cleanly */
+    .search-chips-container {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+        margin-top: 0.45rem !important;
+        width: 100% !important;
+    }
+
+    .search-chips-label {
+        font-size: 0.60rem !important;
+        letter-spacing: 0.10em !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .search-chips-list {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    .search-chip {
+        padding: 0.32rem 0.65rem !important;
+        font-size: 0.75rem !important;
+        min-height: 32px !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        box-sizing: border-box !important;
+    }
+
+    /* CRITICAL: Metric cards strictly stack vertically in 1 column without overlapping */
+    [data-testid="stHorizontalBlock"]:has(.metric-card) {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        gap: 0.50rem !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > div,
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > [data-testid="column"],
+    [data-testid="stHorizontalBlock"]:has(.metric-card) > [data-testid="stColumn"] {
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .metric-card {
+        min-height: auto !important;
+        height: auto !important;
+        padding: 0.70rem 0.85rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .metric-label {
+        font-size: 0.62rem !important;
+        letter-spacing: 0.05em !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .metric-value {
+        font-size: 1.25rem !important;
+        line-height: 1.2 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    .metric-card-compact {
+        min-height: auto !important;
+        padding: 0.60rem 0.75rem !important;
+    }
+
+    .metric-card-compact .metric-label {
+        font-size: 0.60rem !important;
+    }
+
+    .metric-card-compact .metric-value {
+        font-size: 1.15rem !important;
+    }
+
+    /* Report header card */
+    .report-header-card {
+        padding: 0.85rem 0.95rem !important;
+        margin: 0.65rem 0 0.75rem !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .report-eyebrow-tag {
+        font-size: 0.62rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .report-topic-title {
+        font-size: 1.20rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.45rem !important;
+        word-break: break-word !important;
+    }
+
+    .report-meta-row {
+        gap: 0.30rem 0.45rem !important;
+        font-size: 0.74rem !important;
+    }
+
+    /* Verdict & Synthesis boxes */
+    .verdict-box {
+        padding: 0.85rem 0.95rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .verdict-box-title {
+        font-size: 0.65rem !important;
+    }
+
+    .verdict-box-statement {
+        font-size: 0.95rem !important;
+        line-height: 1.45 !important;
+        margin-bottom: 0.45rem !important;
+        word-break: break-word !important;
+    }
+
+    .synthesis-box {
+        padding: 0.85rem 0.95rem !important;
+        font-size: 0.86rem !important;
+        line-height: 1.6 !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    /* Paper cards */
+    .paper-card {
+        padding: 0.85rem 0.95rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .paper-card-title {
+        font-size: 1.05rem !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0.40rem !important;
+        word-break: break-word !important;
+    }
+
+    .paper-authors {
+        font-size: 0.78rem !important;
+        line-height: 1.5 !important;
+        margin-bottom: 0.40rem !important;
+    }
+
+    .paper-abstract {
+        font-size: 0.82rem !important;
+        line-height: 1.6 !important;
+        margin: 0.5rem 0 !important;
     }
 
     .paper-meta-row {
-        gap: 0.35rem;
+        gap: 0.30rem !important;
+        margin-bottom: 0.65rem !important;
+    }
+
+    .tag {
+        font-size: 0.66rem !important;
+        padding: 0.15rem 0.45rem !important;
+    }
+
+    .score-pill {
+        font-size: 0.72rem !important;
+        padding: 0.20rem 0.50rem !important;
     }
 
     .paper-links {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.45rem;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.40rem !important;
+        margin-top: 0.65rem !important;
+        padding-top: 0.50rem !important;
     }
 
     .paper-action-link {
-        width: 100%;
-        justify-content: center;
-        box-sizing: border-box;
+        width: 100% !important;
+        justify-content: center !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Dashboard preset cards */
+    .topic-preset-card {
+        padding: 0.75rem 0.85rem !important;
+        margin-bottom: 0.45rem !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .topic-preset-title {
+        font-size: 0.95rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .topic-preset-desc {
+        font-size: 0.80rem !important;
+        line-height: 1.45 !important;
+    }
+
+    /* Empty state */
+    .empty-results-box {
+        margin: 1rem auto !important;
+        padding: 1.5rem 1rem !important;
+    }
+
+    .empty-results-title {
+        font-size: 1.15rem !important;
+    }
+
+    .empty-results-desc {
+        font-size: 0.85rem !important;
     }
 }
 
