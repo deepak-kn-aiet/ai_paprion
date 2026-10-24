@@ -151,17 +151,158 @@ iframe[title="streamlit_components_v1.html"] {
 }
 
 [data-testid="stHeader"] {
-    background: rgba(245, 244, 249, 0.88) !important;
+    background: rgba(245, 244, 249, 0.92) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle) !important;
+    z-index: 99990 !important;
 }
 
 [data-testid="stToolbar"] {
-    right: 1.25rem;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 0 0.5rem !important;
+    box-sizing: border-box !important;
 }
 
+[data-testid="stToolbar"] > div:first-child,
+.stAppToolbar > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+}
+
+/* Streamlit Header Right Action Controls (Fork, GitHub, Menu, Status) */
+[data-testid="stToolbarActions"] {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+[data-testid="stToolbarActionButton"] button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--surface-white, #FFFFFF) !important;
+    border: 1px solid var(--border-medium, #D5D3DE) !important;
+    border-radius: var(--radius-xs, 6px) !important;
+    color: var(--text-primary, #1E1B2E) !important;
+    -webkit-text-fill-color: var(--text-primary, #1E1B2E) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.80rem !important;
+    font-weight: 600 !important;
+    padding: 0.25rem 0.65rem !important;
+    min-height: 36px !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+
+[data-testid="stToolbarActionButton"] button svg,
+[data-testid="stToolbarActionButton"] button span,
+[data-testid="stToolbarActionButtonIcon"] {
+    color: var(--text-primary, #1E1B2E) !important;
+    fill: var(--text-primary, #1E1B2E) !important;
+    stroke: var(--text-primary, #1E1B2E) !important;
+    -webkit-text-fill-color: var(--text-primary, #1E1B2E) !important;
+}
+
+[data-testid="stToolbarActionButtonLabel"] {
+    color: var(--text-primary, #1E1B2E) !important;
+    -webkit-text-fill-color: var(--text-primary, #1E1B2E) !important;
+    font-weight: 600 !important;
+    margin-left: 0.25rem !important;
+}
+
+[data-testid="stToolbarActionButton"] button:hover {
+    background: var(--surface-soft, #F4F2FA) !important;
+    border-color: var(--violet-primary, #6941C6) !important;
+    color: var(--violet-primary, #6941C6) !important;
+    -webkit-text-fill-color: var(--violet-primary, #6941C6) !important;
+    box-shadow: 0 2px 4px rgba(105, 65, 198, 0.12) !important;
+}
+
+[data-testid="stToolbarActionButton"] button:hover svg,
+[data-testid="stToolbarActionButton"] button:hover span,
+[data-testid="stToolbarActionButton"] button:hover [data-testid="stToolbarActionButtonLabel"] {
+    color: var(--violet-primary, #6941C6) !important;
+    fill: var(--violet-primary, #6941C6) !important;
+    stroke: var(--violet-primary, #6941C6) !important;
+    -webkit-text-fill-color: var(--violet-primary, #6941C6) !important;
+}
+
+/* Streamlit Main Menu button (3 dots) */
 #MainMenu,
+[data-testid="stMainMenu"] {
+    visibility: visible !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-left: 0.25rem !important;
+}
+
+#MainMenu button,
+[data-testid="stMainMenu"] button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--surface-white, #FFFFFF) !important;
+    border: 1px solid var(--border-medium, #D5D3DE) !important;
+    border-radius: var(--radius-xs, 6px) !important;
+    color: var(--text-primary, #1E1B2E) !important;
+    -webkit-text-fill-color: var(--text-primary, #1E1B2E) !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05) !important;
+    transition: all 0.18s ease !important;
+}
+
+#MainMenu button svg,
+#MainMenu button span,
+[data-testid="stMainMenu"] button svg,
+[data-testid="stMainMenu"] button span {
+    color: var(--text-primary, #1E1B2E) !important;
+    fill: var(--text-primary, #1E1B2E) !important;
+    stroke: var(--text-primary, #1E1B2E) !important;
+    -webkit-text-fill-color: var(--text-primary, #1E1B2E) !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+#MainMenu button:hover,
+[data-testid="stMainMenu"] button:hover {
+    background: var(--surface-soft, #F4F2FA) !important;
+    border-color: var(--violet-primary, #6941C6) !important;
+    color: var(--violet-primary, #6941C6) !important;
+    -webkit-text-fill-color: var(--violet-primary, #6941C6) !important;
+}
+
+#MainMenu button:hover svg,
+[data-testid="stMainMenu"] button:hover svg {
+    color: var(--violet-primary, #6941C6) !important;
+    fill: var(--violet-primary, #6941C6) !important;
+    stroke: var(--violet-primary, #6941C6) !important;
+    -webkit-text-fill-color: var(--violet-primary, #6941C6) !important;
+}
+
+/* Status widget (running man icon) */
+[data-testid="stStatusWidget"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    color: var(--text-primary, #1E1B2E) !important;
+}
+
+[data-testid="stStatusWidget"] svg {
+    color: var(--violet-primary, #6941C6) !important;
+    fill: var(--violet-primary, #6941C6) !important;
+}
+
 footer {
     visibility: hidden;
 }
@@ -2091,9 +2232,9 @@ button[data-testid="stExpandSidebarButton"]:hover svg {
 
     /* Streamlit header bar on tablets & mobile screens */
     [data-testid="stHeader"] {
-        height: 3.25rem !important;
-        min-height: 3.25rem !important;
-        padding: 0 0.75rem !important;
+        height: auto !important;
+        min-height: 3.5rem !important;
+        padding: max(0.25rem, env(safe-area-inset-top, 0.25rem)) 0.75rem 0.25rem !important;
         background: rgba(245, 244, 249, 0.94) !important;
         display: flex !important;
         align-items: center !important;
@@ -2230,9 +2371,40 @@ button[data-testid="stExpandSidebarButton"]:hover svg {
         top: 0.35rem !important;
     }
 
-    /* Mobile sidebar constraint */
+    /* Mobile sidebar constraint & safe area header */
     [data-testid="stSidebar"] {
         max-width: 86vw !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+        padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem)) !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
+        min-height: 54px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    /* Touch target sizing for header right controls on tablet */
+    [data-testid="stToolbarActions"] [data-testid="stToolbarActionButton"] button {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 0.35rem 0.65rem !important;
+        border-radius: 10px !important;
+        touch-action: manipulation !important;
+    }
+
+    #MainMenu button,
+    [data-testid="stMainMenu"] button {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        border-radius: 10px !important;
+        touch-action: manipulation !important;
     }
 
     /* Workspace main content container shell */
@@ -2490,11 +2662,11 @@ button[data-testid="stExpandSidebarButton"]:hover svg {
 }
 
 @media (max-width: 480px) {
-    /* Header bar on mobile handsets: generous height to fit 44px touch targets */
+    /* Header bar on mobile handsets: generous height to fit 44px touch targets and safe area */
     [data-testid="stHeader"] {
-        height: 3.25rem !important;
-        min-height: 3.25rem !important;
-        padding: 0 0.50rem !important;
+        height: auto !important;
+        min-height: 3.5rem !important;
+        padding: max(0.25rem, env(safe-area-inset-top, 0.25rem)) 0.50rem 0.25rem !important;
         background: rgba(245, 244, 249, 0.96) !important;
         display: flex !important;
         align-items: center !important;
@@ -2624,6 +2796,39 @@ button[data-testid="stExpandSidebarButton"]:hover svg {
         width: 24px !important;
         height: 24px !important;
         opacity: 1 !important;
+    }
+
+    /* Mobile sidebar constraint & safe area header on handsets */
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+        padding-top: max(0.85rem, env(safe-area-inset-top, 0.85rem)) !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        min-height: 56px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    /* 44x44px touch targets for header actions and menu on handset */
+    [data-testid="stToolbarActions"] [data-testid="stToolbarActionButton"] button {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 0.25rem 0.50rem !important;
+        border-radius: 10px !important;
+        touch-action: manipulation !important;
+        font-size: 0.76rem !important;
+    }
+
+    #MainMenu button,
+    [data-testid="stMainMenu"] button {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        border-radius: 10px !important;
+        touch-action: manipulation !important;
     }
 
     [data-testid="stToolbar"] {
