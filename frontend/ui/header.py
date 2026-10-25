@@ -10,8 +10,36 @@ from agent.agent import ResearchAgentResult
 from frontend.ui.hero_shader import render_hero_shader
 
 
+def render_team_banner() -> None:
+    """Render a compact, centered CODE X DYNASTY team branding banner."""
+    st.markdown(
+        """
+        <div class="team-branding-banner-wrapper">
+            <div class="team-branding-banner">
+                <div class="team-banner-eyebrow">
+                    <span class="team-eyebrow-dot"></span>
+                    <span>MEET THE TEAM</span>
+                </div>
+                <div class="team-banner-main">
+                    <span class="team-banner-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </span>
+                    <span class="team-banner-name">CODE X DYNASTY</span>
+                </div>
+                <div class="team-banner-tagline">Built with intelligence.</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_hero() -> None:
     """Render main editorial hero header and description with WebGL ShaderBackground backdrop."""
+    render_team_banner()
     render_hero_shader()
     st.markdown(
         """
@@ -24,13 +52,13 @@ def render_hero() -> None:
         """,
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="hero-eyebrow">AI-POWERED LITERATURE DISCOVERY</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-eyebrow">ACADEMIC INTELLIGENCE</div>', unsafe_allow_html=True)
     st.title("AI Research Workspace")
     st.markdown(
         """
         <div class="hero-desc">
-            Discover relevant papers, synthesize evidence across canonical literature,
-            and evaluate research quality with calibrated, multi-factor scoring.
+            Search, analyze, and synthesize academic literature with AI. Get evidence-grounded insights,
+            key findings, and a structured research overview.
         </div>
         <div class="editorial-divider"></div>
         """,

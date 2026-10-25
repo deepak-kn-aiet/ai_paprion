@@ -1,0 +1,145 @@
+{
+  "desktop": {
+    "viewport": "1440x900",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "horizontal_overflow": false,
+    "screenshot": "artifacts/visual-qa/01_desktop_research_search_1440x900.png",
+    "elements": {
+      "team_banner": {
+        "found": true,
+        "x": 586,
+        "y": 104,
+        "width": 258,
+        "height": 97,
+        "top": 104,
+        "bottom": 201,
+        "visible": true
+      },
+      "hero_title": {
+        "found": true,
+        "x": 141,
+        "y": 286,
+        "width": 950,
+        "height": 96,
+        "top": 286,
+        "bottom": 382,
+        "visible": true
+      },
+      "search_input": {
+        "found": true,
+        "x": 143,
+        "y": 537,
+        "width": 928,
+        "height": 46,
+        "top": 537,
+        "bottom": 583,
+        "visible": true
+      },
+      "run_button": {
+        "found": true,
+        "x": 1087,
+        "y": 534,
+        "width": 202,
+        "height": 49,
+        "top": 534,
+        "bottom": 583,
+        "visible": true
+      },
+      "mobile_nav": {
+        "found": true,
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "bottom": 0,
+        "visible": false
+      },
+      "workflow_cards": {
+        "found": true,
+        "x": 141,
+        "y": 672,
+        "width": 370,
+        "height": 150,
+        "top": 672,
+        "bottom": 822,
+        "visible": true
+      }
+    }
+  },
+  "mobile": {
+    "viewport": "390x844",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "horizontal_overflow": false,
+    "screenshot": "artifacts/visual-qa/03_mobile_research_search_390x844.png",
+    "elements": {
+      "team_banner": {
+        "found": true,
+        "x": 12,
+        "y": 90,
+        "width": 366,
+        "height": 86,
+        "top": 90,
+        "bottom": 176,
+        "visible": true
+      },
+      "hero_title": {
+        "found": true,
+        "x": 12,
+        "y": 253,
+        "width": 366,
+        "height": 65,
+        "top": 253,
+        "bottom": 318,
+        "visible": true
+      },
+      "search_input": {
+        "found": true,
+        "x": 14,
+        "y": 451,
+        "width": 362,
+        "height": 42,
+        "top": 451,
+        "bottom": 493,
+        "visible": true
+      },
+      "run_button": {
+        "found": true,
+        "x": 28,
+        "y": 509,
+        "width": 334,
+        "height": 46,
+        "top": 509,
+        "bottom": 555,
+        "visible": true
+      },
+      "mobile_nav": {
+        "found": true,
+        "x": 0,
+        "y": 787,
+        "width": 390,
+        "height": 57,
+        "top": 787,
+        "bottom": 844,
+        "visible": true
+      },
+      "workflow_cards": {
+        "found": true,
+        "x": 12,
+        "y": 728,
+        "width": 366,
+        "height": 150,
+        "top": 728,
+        "bottom": 878,
+        "visible": true
+      }
+    },
+    "nav_overlap": {
+      "nav_height": 57,
+      "spacer_height": 0,
+      "has_spacer": false
+    }
+  }
+}

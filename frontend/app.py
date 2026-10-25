@@ -67,9 +67,13 @@ from frontend.ui.formatters import (
 from frontend.ui.header import (
     render_hero,
     render_report_header,
+    render_team_banner,
 )
 from frontend.ui.hero_shader import render_hero_shader
-from frontend.ui.metrics import render_research_metrics
+from frontend.ui.metrics import (
+    render_overview_visualizations,
+    render_research_metrics,
+)
 from frontend.ui.paper_card import (
     render_metric_cards,
     render_paper_card,
@@ -78,8 +82,10 @@ from frontend.ui.paper_card import (
 from frontend.ui.paper_library import render_paper_library
 from frontend.ui.particles import render_particle_background
 from frontend.ui.sidebar import (
+    MOBILE_NAV_ITEMS,
     SIDEBAR_NAV_ITEMS,
     record_recent_search,
+    render_mobile_navigation,
     render_sidebar,
 )
 from frontend.ui.theme import (
@@ -97,6 +103,7 @@ from frontend.ui.verdict import (
 __all__ = [
     "COMPONENT_KEY_ALIASES",
     "EXAMPLE_TOPICS",
+    "MOBILE_NAV_ITEMS",
     "SCORE_BREAKDOWN_NOTE",
     "SEARCH_SUGGESTIONS",
     "SIDEBAR_NAV_ITEMS",
@@ -126,7 +133,9 @@ __all__ = [
     "render_initial_dashboard",
     "render_library_page",
     "render_metric_cards",
+    "render_mobile_navigation",
     "render_overview_page",
+    "render_overview_visualizations",
     "render_paper_card",
     "render_paper_library",
     "render_particle_background",
@@ -139,6 +148,7 @@ __all__ = [
     "render_score_breakdown",
     "render_search_page",
     "render_sidebar",
+    "render_team_banner",
     "render_theme",
     "render_tubes_cursor",
     "render_verdict_page",
@@ -185,7 +195,7 @@ def render_search_section() -> tuple[str, bool]:
 
     with search_col:
         topic_input = st.text_input(
-            "Research question or academic topic",
+            "Enter research question or academic topic",
             placeholder=(
                 "e.g., Retrieval-augmented generation for "
                 "biomedical question answering"
@@ -264,8 +274,20 @@ def handle_research_submission(topic_input: str) -> None:
     record_recent_search(clean_topic)
 
     status_placeholder = st.empty()
-    status_placeholder.info(
-        f"Initiating autonomous research on: **{clean_topic}**"
+    status_placeholder.markdown(
+        f"""
+        <div class="research-status-banner">
+            <div class="status-banner-header">
+                <span class="status-pulse-dot"></span>
+                <strong>Autonomous Research Pipeline Active</strong>
+            </div>
+            <div class="status-banner-topic">Target Inquiry: <em>{html.escape(clean_topic)}</em></div>
+            <div class="status-banner-steps">
+                <span>① Query Planning</span> → <span>② OpenAlex Retrieval</span> → <span>③ Multi-Factor Scoring</span> → <span>④ Gemini Synthesis</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     try:
@@ -381,6 +403,7 @@ def render_overview_page(result: ResearchAgentResult | None, topic: str) -> None
 
     render_report_header(topic, result)
     render_research_metrics(result, result.overview)
+    render_overview_visualizations(result)
     render_executive_overview(result.overview, result)
 
 
@@ -409,7 +432,7 @@ def render_verdict_page(result: ResearchAgentResult | None) -> None:
         render_empty_results_state("Research Verdict")
         return
 
-    render_verdict_section(result.overview)
+    render_verdict_section(result.overview, papers=result.ranked_papers)
 
 
 def render_research_results() -> None:
@@ -431,8 +454,9 @@ def render_research_results() -> None:
 
     render_report_header(active_topic, current_result)
     render_research_metrics(current_result, current_result.overview)
+    render_overview_visualizations(current_result)
     render_executive_overview(current_result.overview, current_result)
-    render_verdict_section(current_result.overview)
+    render_verdict_section(current_result.overview, papers=current_result.ranked_papers)
     render_paper_library(current_result.ranked_papers, active_topic)
     render_score_analysis(current_result.ranked_papers)
     render_planned_queries(current_result)
@@ -448,6 +472,21 @@ def render() -> None:
     )
 
     render_theme()
+    # Query parameter deep-linking support for browser automation and section review
+    nav_param = st.query_params.get("nav")
+    nav_labels = [item[0] for item in SIDEBAR_NAV_ITEMS]
+    if nav_param and nav_param in nav_labels:
+        st.session_state["sidebar_navigation"] = nav_param
+
+    if st.query_params.get("demo") == "true" and st.session_state.get("agent_result") is None:
+        from tests.test_app import _make_sample_agent_result
+        st.session_state["agent_result"] = _make_sample_agent_result("Retrieval-Augmented Generation")
+        st.session_state["active_topic"] = "Retrieval-Augmented Generation"
+    elif "topic" in st.query_params and st.session_state.get("agent_result") is None:
+        url_topic = st.query_params.get("topic", "").strip()
+        if url_topic:
+            handle_research_submission(url_topic)
+
     active_nav = render_sidebar()
 
     if "agent_result" not in st.session_state:
@@ -472,6 +511,7 @@ def render() -> None:
     else:
         render_search_page()
 
+    render_mobile_navigation()
     render_footer()
 
 

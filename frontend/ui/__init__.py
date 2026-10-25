@@ -28,9 +28,13 @@ from .formatters import (
 from .header import (
     render_hero,
     render_report_header,
+    render_team_banner,
 )
 from .hero_shader import render_hero_shader
-from .metrics import render_research_metrics
+from .metrics import (
+    render_overview_visualizations,
+    render_research_metrics,
+)
 from .paper_card import (
     render_metric_cards,
     render_paper_card,
@@ -39,8 +43,10 @@ from .paper_card import (
 from .paper_library import render_paper_library
 from .particles import render_particle_background
 from .sidebar import (
+    MOBILE_NAV_ITEMS,
     SIDEBAR_NAV_ITEMS,
     record_recent_search,
+    render_mobile_navigation,
     render_sidebar,
 )
 from .theme import (
@@ -50,14 +56,20 @@ from .theme import (
 )
 from .tubes_cursor import render_tubes_cursor
 from .verdict import (
+    extract_citation_tokens,
+    format_authors_short,
+    format_finding_citations,
     format_synthesis_citations,
+    get_paper_external_url,
     render_executive_overview,
     render_verdict_section,
+    render_verdict_statement_box,
 )
 
 __all__ = [
     "COMPONENT_KEY_ALIASES",
     "EXAMPLE_TOPICS",
+    "MOBILE_NAV_ITEMS",
     "SCORE_BREAKDOWN_NOTE",
     "SIDEBAR_NAV_ITEMS",
     "THEME_CSS_PATH",
@@ -66,10 +78,14 @@ __all__ = [
     "build_paper_verdict",
     "build_score_breakdown",
     "compute_weighted_score",
+    "extract_citation_tokens",
     "format_authors",
+    "format_authors_short",
     "format_count",
+    "format_finding_citations",
     "format_score",
     "format_synthesis_citations",
+    "get_paper_external_url",
     "is_valid_component_score",
     "load_theme_css",
     "record_recent_search",
@@ -79,6 +95,8 @@ __all__ = [
     "render_hero_shader",
     "render_initial_dashboard",
     "render_metric_cards",
+    "render_mobile_navigation",
+    "render_overview_visualizations",
     "render_paper_card",
     "render_paper_library",
     "render_particle_background",
@@ -88,8 +106,10 @@ __all__ = [
     "render_score_analysis",
     "render_score_breakdown",
     "render_sidebar",
+    "render_team_banner",
     "render_theme",
     "render_tubes_cursor",
     "render_verdict_section",
+    "render_verdict_statement_box",
     "to_progress_value",
 ]

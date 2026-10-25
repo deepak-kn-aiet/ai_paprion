@@ -14,6 +14,14 @@ SIDEBAR_NAV_ITEMS = [
     ("Research Verdict", "verdict-section"),
 ]
 
+MOBILE_NAV_ITEMS = [
+    ("Research Search", "Search", "🔍"),
+    ("Research Overview", "Overview", "📊"),
+    ("Paper Library", "Library", "📚"),
+    ("Score Analysis", "Analysis", "📈"),
+    ("Research Verdict", "Verdict", "⚖️"),
+]
+
 
 def record_recent_search(topic: str) -> None:
     """Record a completed search topic into session state (max 5 items)."""
@@ -111,3 +119,33 @@ def render_sidebar() -> str:
         unsafe_allow_html=True,
     )
     return str(active_nav)
+
+
+def render_mobile_navigation() -> None:
+    """Render compact, fixed bottom navigation bar on mobile viewports."""
+    current_nav = st.session_state.get("sidebar_navigation", "Research Search")
+
+    with st.container(key="mobile_nav_bar"):
+        m_cols = st.columns(5)
+        for idx, (nav_key, short_label, icon) in enumerate(MOBILE_NAV_ITEMS):
+            is_active = (current_nav == nav_key)
+            btn_type = "primary" if is_active else "secondary"
+            with m_cols[idx]:
+                clicked = st.button(
+                    f"{icon}\n{short_label}",
+                    key=f"mob_nav_tab_{idx}",
+                    use_container_width=True,
+                    type=btn_type,
+                )
+                if clicked and current_nav != nav_key:
+                    st.session_state["pending_navigation"] = nav_key
+                    st.rerun()
+
+
+__all__ = [
+    "MOBILE_NAV_ITEMS",
+    "SIDEBAR_NAV_ITEMS",
+    "record_recent_search",
+    "render_mobile_navigation",
+    "render_sidebar",
+]

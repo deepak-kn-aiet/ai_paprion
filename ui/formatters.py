@@ -190,6 +190,8 @@ def build_paper_card(
         is_recommended = paper.is_recommended
         is_open_access = paper.is_open_access
         doi = paper.doi
+        arxiv_id = paper.arxiv_id
+        access_status = paper.access_status
     elif isinstance(paper, dict):
         paper_rank = rank if rank is not None else paper.get("rank", "-")
         title = paper.get("title") or "Untitled"
@@ -206,6 +208,8 @@ def build_paper_card(
         is_recommended = paper.get("is_recommended")
         is_open_access = paper.get("is_open_access")
         doi = paper.get("doi")
+        arxiv_id = paper.get("arxiv_id")
+        access_status = paper.get("access_status", "unknown")
     else:
         paper_rank = rank if rank is not None else "-"
         title = "Untitled"
@@ -222,6 +226,8 @@ def build_paper_card(
         is_recommended = None
         is_open_access = None
         doi = None
+        arxiv_id = None
+        access_status = "unknown"
 
     return {
         "rank": paper_rank,
@@ -245,4 +251,6 @@ def build_paper_card(
         "is_recommended": is_recommended,
         "is_open_access": is_open_access,
         "doi": doi,
+        "arxiv_id": arxiv_id,
+        "access_status": access_status,
     }

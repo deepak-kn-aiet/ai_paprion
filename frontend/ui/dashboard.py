@@ -155,9 +155,53 @@ def render_initial_dashboard() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+PAGE_DESCRIPTIONS = {
+    "Research Overview": "View executive research metrics, bibliometric distributions across publication timeline, top venues, and citations, narrative synthesis overview, and core thematic clusters.",
+    "Paper Library": "Browse ranked academic papers, inspect metric badges, filter by Open Access, and explore complete score breakdowns.",
+    "Score Analysis": "Analyze multi-factor scoring methodology, component weights (citations, venue, recency), and query diagnostics.",
+    "Research Verdict": "Read the definitive evidence-grounded verdict, confidence rationale, key findings, and open research challenges.",
+}
+
+PAGE_FEATURES = {
+    "Research Overview": [
+        "Executive AI synthesis grounded in verified scientific literature",
+        "Empirical bibliometrics across publication timeline, top venues, and citations",
+        "Thematic clusters grouping related methodologies and breakthroughs",
+        "Calibrated confidence assessment with abstract verification metrics",
+    ],
+    "Paper Library": [
+        "Ranked candidate papers sorted by multi-criteria relevance scoring",
+        "Open-access resolution with direct links to unpaywalled PDFs",
+        "Dynamic filtering by venue, recommendation status, and keywords",
+    ],
+    "Score Analysis": [
+        "Transparent component weighting (citations, venue tier, recency, peer review)",
+        "Tabular ranking breakdown for all candidate literature",
+        "Execution diagnostics for decomposed search queries",
+    ],
+    "Research Verdict": [
+        "Definitive consensus takeaway and calibrated confidence score",
+        "Key findings linked to canonical DOI/arXiv records",
+        "Identified methodological limitations and open research challenges",
+    ],
+}
+
+
 def render_empty_results_state(page_title: str) -> None:
     """Render a helpful empty state when a results page is accessed before running research."""
     escaped_title = html.escape(page_title)
+    guidance = PAGE_DESCRIPTIONS.get(
+        page_title,
+        "Explore literature syntheses, quality evaluations, and academic evidence.",
+    )
+    features = PAGE_FEATURES.get(page_title, [])
+    feature_items = "".join(f"<li>{html.escape(f)}</li>" for f in features)
+    features_html = (
+        f"<ul class='empty-results-feature-list'>{feature_items}</ul>"
+        if feature_items
+        else ""
+    )
+
     st.markdown(
         f"""
         <div class="empty-results-box">
@@ -168,6 +212,10 @@ def render_empty_results_state(page_title: str) -> None:
                 Please start on the <strong>Research Search</strong> page to retrieve canonical literature,
                 generate evidence syntheses, and evaluate candidate papers.
             </p>
+            <div class="empty-results-hint">
+                <strong>What you'll find here:</strong> {html.escape(guidance)}
+                {features_html}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,

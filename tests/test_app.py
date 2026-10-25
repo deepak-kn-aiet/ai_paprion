@@ -391,7 +391,7 @@ def test_app_initial_render_without_search():
     assert at.title[0].value == "AI Research Workspace"
     assert len(at.text_input) == 1
     assert at.text_input[0].placeholder.startswith("e.g., Retrieval-augmented")
-    assert len(at.button) == 1
+    assert len(at.button) >= 1
     assert at.button[0].label == "Run Research"
     # No error or warning on initial clean load
     assert len(at.error) == 0
@@ -545,3 +545,41 @@ def test_search_handles_llm_provider_error():
 
         assert len(at.error) == 1
         assert "AI Provider error" in str(at.error[0].value)
+
+
+def test_mobile_navigation_tabs_exist_and_switch():
+    """Verify that all 5 mobile navigation tabs are rendered and switch sections."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    mob_btns = [b for b in at.button if b.key and b.key.startswith("mob_nav_tab_")]
+    assert len(mob_btns) == 5
+    assert "Search" in mob_btns[0].label
+    assert "Overview" in mob_btns[1].label
+    assert "Library" in mob_btns[2].label
+    assert "Analysis" in mob_btns[3].label
+    assert "Verdict" in mob_btns[4].label
+
+    # Click overview tab
+    mob_btns[1].click().run()
+    assert at.session_state["sidebar_navigation"] == "Research Overview"
+
+
+def test_mobile_nav_items_export_contract():
+    """Regression test: verify app.py and frontend.app export MOBILE_NAV_ITEMS with 5 sections."""
+    import app
+    import frontend.app
+
+    assert hasattr(app, "MOBILE_NAV_ITEMS")
+    assert hasattr(frontend.app, "MOBILE_NAV_ITEMS")
+    assert len(app.MOBILE_NAV_ITEMS) == 5
+    assert len(frontend.app.MOBILE_NAV_ITEMS) == 5
+    expected_keys = [
+        "Research Search",
+        "Research Overview",
+        "Paper Library",
+        "Score Analysis",
+        "Research Verdict",
+    ]
+    assert [item[0] for item in app.MOBILE_NAV_ITEMS] == expected_keys
+    assert [item[0] for item in frontend.app.MOBILE_NAV_ITEMS] == expected_keys
