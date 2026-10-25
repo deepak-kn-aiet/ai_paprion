@@ -567,13 +567,12 @@ def test_mobile_navigation_tabs_exist_and_switch():
 
 def test_mobile_nav_items_export_contract():
     """Regression test: verify app.py and frontend.app export MOBILE_NAV_ITEMS with 5 sections."""
-    import app
-    import frontend.app
+    from app import MOBILE_NAV_ITEMS as root_mobile_nav
+    from frontend.app import MOBILE_NAV_ITEMS as frontend_mobile_nav
+    from frontend.ui.sidebar import MOBILE_NAV_ITEMS as sidebar_mobile_nav
 
-    assert hasattr(app, "MOBILE_NAV_ITEMS")
-    assert hasattr(frontend.app, "MOBILE_NAV_ITEMS")
-    assert len(app.MOBILE_NAV_ITEMS) == 5
-    assert len(frontend.app.MOBILE_NAV_ITEMS) == 5
+    assert root_mobile_nav == frontend_mobile_nav == sidebar_mobile_nav
+    assert len(root_mobile_nav) == 5
     expected_keys = [
         "Research Search",
         "Research Overview",
@@ -581,5 +580,5 @@ def test_mobile_nav_items_export_contract():
         "Score Analysis",
         "Research Verdict",
     ]
-    assert [item[0] for item in app.MOBILE_NAV_ITEMS] == expected_keys
-    assert [item[0] for item in frontend.app.MOBILE_NAV_ITEMS] == expected_keys
+    assert [item[0] for item in root_mobile_nav] == expected_keys
+    assert [item[0] for item in frontend_mobile_nav] == expected_keys

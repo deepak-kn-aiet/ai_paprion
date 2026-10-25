@@ -6,10 +6,14 @@ to maintain full backward compatibility with test runners and external scripts.
 
 from __future__ import annotations
 
+try:
+    from frontend.app import MOBILE_NAV_ITEMS
+except ImportError:
+    from frontend.ui.sidebar import MOBILE_NAV_ITEMS
+
 from frontend.app import (
     COMPONENT_KEY_ALIASES,
     EXAMPLE_TOPICS,
-    MOBILE_NAV_ITEMS,
     SCORE_BREAKDOWN_NOTE,
     SEARCH_SUGGESTIONS,
     SIDEBAR_NAV_ITEMS,
